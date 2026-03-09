@@ -6,7 +6,7 @@ import { v4 as uuidv4 } from "uuid";
 
 const chatSchema = z.object({
   message: z.string().min(1).max(5000),
-  conversationId: z.string().optional(),
+  conversationId: z.string().nullable().optional(),
   orgSlug: z.string().default("sunrise-pm"),
   channel: z.enum(["chat", "email", "sms", "voice"]).default("chat"),
 });
