@@ -1,7 +1,12 @@
 import { NextResponse } from "next/server";
+import { getAuthContext } from "@/lib/auth";
 import { demoDailyStats, demoConversations } from "@/lib/demo-data";
 
 export async function GET() {
+  const authCtx = await getAuthContext();
+  // TODO: When DB is connected, filter by authCtx.orgId
+  // For now, always return demo data
+
   const stats = demoDailyStats;
 
   // Aggregate totals

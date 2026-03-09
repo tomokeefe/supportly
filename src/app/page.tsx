@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { auth } from "@clerk/nextjs/server";
 
 const PRICING = [
   {
@@ -13,7 +14,7 @@ const PRICING = [
       "Community support",
     ],
     cta: "Get Started Free",
-    href: "/demo",
+    href: "/sign-up",
     recommended: false,
   },
   {
@@ -29,7 +30,7 @@ const PRICING = [
       "Email support",
     ],
     cta: "Start Free Trial",
-    href: "/demo",
+    href: "/sign-up",
     recommended: false,
   },
   {
@@ -46,7 +47,7 @@ const PRICING = [
       "Priority support",
     ],
     cta: "Start Free Trial",
-    href: "/demo",
+    href: "/sign-up",
     recommended: true,
   },
   {
@@ -69,7 +70,15 @@ const PRICING = [
   },
 ];
 
-export default function LandingPage() {
+export default async function LandingPage() {
+  let isSignedIn = false;
+  try {
+    const { userId } = await auth();
+    isSignedIn = !!userId;
+  } catch {
+    // Clerk not configured — show signed-out nav
+  }
+
   return (
     <div className="min-h-screen bg-cream">
       {/* Navigation */}
@@ -100,18 +109,29 @@ export default function LandingPage() {
             >
               Demo
             </Link>
-            <Link
-              href="/dashboard"
-              className="text-sm text-[--color-text-secondary] hover:text-dark accent-hover"
-            >
-              Dashboard
-            </Link>
-            <Link
-              href="/demo"
-              className="text-sm font-medium bg-vermillion text-white px-5 py-2 rounded-full hover:bg-[#C7412A] accent-hover"
-            >
-              Start Free Trial
-            </Link>
+            {isSignedIn ? (
+              <Link
+                href="/dashboard"
+                className="text-sm font-medium bg-vermillion text-white px-5 py-2 rounded-full hover:bg-[#C7412A] accent-hover"
+              >
+                Dashboard
+              </Link>
+            ) : (
+              <>
+                <Link
+                  href="/sign-in"
+                  className="text-sm text-[--color-text-secondary] hover:text-dark accent-hover"
+                >
+                  Sign In
+                </Link>
+                <Link
+                  href="/sign-up"
+                  className="text-sm font-medium bg-vermillion text-white px-5 py-2 rounded-full hover:bg-[#C7412A] accent-hover"
+                >
+                  Start Free Trial
+                </Link>
+              </>
+            )}
           </div>
         </div>
       </nav>
