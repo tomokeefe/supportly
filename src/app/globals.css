@@ -1,16 +1,73 @@
 @import "tailwindcss";
 
+/* ── Design Tokens ────────────────────────────────────── */
 :root {
+  /* Surfaces */
+  --color-cream: #FAFAF7;
+  --color-taupe: #F0EDE8;
+  --color-dark: #1C1917;
+
+  /* Text */
+  --color-text-primary: #1C1917;
+  --color-text-secondary: #78716C;
+
+  /* Accent */
+  --color-vermillion: #DC4A2E;
+  --color-vermillion-light: #FEF2F0;
+
+  /* Borders */
+  --color-border: #E7E5E4;
+
+  /* Fallbacks for existing pages */
   --background: #ffffff;
   --foreground: #0f172a;
 }
 
+/* ── Tailwind v4 Theme Extensions ─────────────────────── */
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+
+  /* Map CSS variable fonts to Tailwind font utilities */
+  --font-sans: var(--font-sans), "DM Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-serif: var(--font-serif), "DM Serif Display", ui-serif, Georgia, serif;
+  --font-mono: var(--font-mono), "JetBrains Mono", ui-monospace, monospace;
+
+  /* Custom colors available as Tailwind utilities */
+  --color-cream: #FAFAF7;
+  --color-taupe: #F0EDE8;
+  --color-dark: #1C1917;
+  --color-vermillion: #DC4A2E;
+  --color-vermillion-light: #FEF2F0;
+  --color-border: #E7E5E4;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
+}
+
+/* ── Landing Page Utilities ───────────────────────────── */
+
+.heading-editorial {
+  font-family: var(--font-serif), "DM Serif Display", Georgia, serif;
+  font-weight: 400;
+  letter-spacing: -0.01em;
+  line-height: 1.1;
+}
+
+.stat-mono {
+  font-family: var(--font-mono), "JetBrains Mono", monospace;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+}
+
+.accent-hover {
+  transition: color 0.15s ease, background-color 0.15s ease, border-color 0.15s ease;
+}
+
+.editorial-rule {
+  width: 48px;
+  height: 2px;
+  background: var(--color-vermillion);
 }
