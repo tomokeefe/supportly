@@ -1,18 +1,31 @@
-import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
+import { NextResponse } from "next/server";
+import type { NextRequest } from "next/server";
 
-const isProtectedRoute = createRouteMatcher([
-  "/dashboard(.*)",
-  "/onboarding(.*)",
-]);
+const clerkConfigured = !!process.env.CLERK_SECRET_KEY;
 
-export default clerkMiddleware(async (auth, req) => {
-  // Skip auth when Clerk is not configured
-  if (!process.env.CLERK_SECRET_KEY) return;
+async function clerkAuth(req: NextRequest) {
+  const { clerkMiddleware, createRouteMatcher } = await import(
+    "@clerk/nextjs/server"
+  );
 
-  if (isProtectedRoute(req)) {
-    await auth.protect();
+  const isProtectedRoute = createRouteMatcher([
+    "/dashboard(.*)",
+    "/onboarding(.*)",
+  ]);
+
+  return clerkMiddleware(async (auth, request) => {
+    if (isProtectedRoute(request)) {
+      await auth.protect();
+    }
+  })(req, {} as never);
+}
+
+export default async function middleware(req: NextRequest) {
+  if (!clerkConfigured) {
+    return NextResponse.next();
   }
-});
+  return clerkAuth(req);
+}
 
 export const config = {
   matcher: [
