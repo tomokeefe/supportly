@@ -2,51 +2,66 @@ import Link from "next/link";
 
 const PRICING = [
   {
+    name: "Free",
+    price: "$0",
+    period: "",
+    description: "Try it risk-free — no credit card needed",
+    features: [
+      "50 conversations/mo",
+      "1 knowledge base",
+      "Chat widget",
+      "Community support",
+    ],
+    cta: "Get Started Free",
+    href: "/demo",
+    recommended: false,
+  },
+  {
     name: "Starter",
-    price: "$299",
+    price: "$29",
     period: "/mo",
-    description: "For small teams getting started with AI support",
+    description: "For small businesses ready to automate support",
     features: [
       "500 conversations/mo",
       "1 knowledge base",
-      "Chat widget",
-      "Email support",
+      "Chat + Email + SMS",
       "Basic analytics",
+      "Email support",
     ],
     cta: "Start Free Trial",
     href: "/demo",
     recommended: false,
   },
   {
-    name: "Growth",
-    price: "$599",
+    name: "Pro",
+    price: "$79",
     period: "/mo",
-    description: "For growing businesses that need every channel",
+    description: "For growing teams that need every channel",
     features: [
       "2,500 conversations/mo",
       "3 knowledge bases",
-      "Chat + Email + SMS",
-      "Priority support",
+      "All channels",
       "Advanced analytics",
       "Custom branding",
+      "Priority support",
     ],
     cta: "Start Free Trial",
     href: "/demo",
     recommended: true,
   },
   {
-    name: "Enterprise",
-    price: "$1,999",
+    name: "Business",
+    price: "$199",
     period: "/mo",
     description: "For organizations that need scale and control",
     features: [
       "Unlimited conversations",
       "Unlimited knowledge bases",
       "All channels + voice",
-      "Dedicated account manager",
-      "Custom integrations",
+      "API access",
       "SLA guarantee",
       "SSO & SAML",
+      "Dedicated account manager",
     ],
     cta: "Contact Sales",
     href: "#",
@@ -345,11 +360,11 @@ export default function LandingPage() {
               Transparent pricing. No surprises.
             </h2>
             <p className="text-[--color-text-secondary]">
-              Start free for 14 days. No credit card required.
+              Free forever. Upgrade when you&apos;re ready.
             </p>
           </div>
 
-          <div className="grid md:grid-cols-3 gap-6 lg:gap-8">
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
             {PRICING.map((plan) => (
               <div
                 key={plan.name}
