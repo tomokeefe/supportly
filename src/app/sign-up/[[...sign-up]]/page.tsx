@@ -1,15 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import dynamic from "next/dynamic";
 import { ResolvlyLogo } from "@/components/resolvly-logo";
-
-const ClerkSignUp = dynamic(
-  () => import("@clerk/nextjs").then((mod) => mod.SignUp),
-  { ssr: false }
-);
+import { useClerkComponents } from "@/components/clerk-wrapper";
 
 export default function SignUpPage() {
+  const clerk = useClerkComponents();
+  const SignUp = clerk?.SignUp;
+
   return (
     <div className="min-h-screen bg-cream flex flex-col">
       <nav className="border-b border-border">
@@ -32,14 +30,20 @@ export default function SignUpPage() {
             </p>
           </div>
           <div className="flex justify-center">
-            <ClerkSignUp
-              appearance={{
-                variables: {
-                  colorPrimary: "#DC4A2E",
-                  fontFamily: "DM Sans, sans-serif",
-                },
-              }}
-            />
+            {SignUp ? (
+              <SignUp
+                appearance={{
+                  variables: {
+                    colorPrimary: "#DC4A2E",
+                    fontFamily: "DM Sans, sans-serif",
+                  },
+                }}
+              />
+            ) : (
+              <div className="animate-pulse text-[--color-text-secondary]">
+                Loading...
+              </div>
+            )}
           </div>
         </div>
       </div>

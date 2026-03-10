@@ -1,15 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import dynamic from "next/dynamic";
 import { ResolvlyLogo } from "@/components/resolvly-logo";
-
-const ClerkSignIn = dynamic(
-  () => import("@clerk/nextjs").then((mod) => mod.SignIn),
-  { ssr: false }
-);
+import { useClerkComponents } from "@/components/clerk-wrapper";
 
 export default function SignInPage() {
+  const clerk = useClerkComponents();
+  const SignIn = clerk?.SignIn;
+
   return (
     <div className="min-h-screen bg-cream flex flex-col">
       <nav className="border-b border-border">
@@ -31,14 +29,20 @@ export default function SignInPage() {
             </p>
           </div>
           <div className="flex justify-center">
-            <ClerkSignIn
-              appearance={{
-                variables: {
-                  colorPrimary: "#DC4A2E",
-                  fontFamily: "DM Sans, sans-serif",
-                },
-              }}
-            />
+            {SignIn ? (
+              <SignIn
+                appearance={{
+                  variables: {
+                    colorPrimary: "#DC4A2E",
+                    fontFamily: "DM Sans, sans-serif",
+                  },
+                }}
+              />
+            ) : (
+              <div className="animate-pulse text-[--color-text-secondary]">
+                Loading...
+              </div>
+            )}
           </div>
         </div>
       </div>

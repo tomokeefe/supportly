@@ -3,44 +3,8 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
-import dynamic from "next/dynamic";
 import { ResolvlyLogo } from "@/components/resolvly-logo";
-
-const ClerkUserButton = dynamic(
-  () => import("@clerk/nextjs").then((mod) => mod.UserButton),
-  { ssr: false }
-);
-
-// Client-side auth redirect — if Clerk is configured but user is not signed in
-const ClerkAuthGuard = dynamic(
-  () =>
-    import("@clerk/nextjs").then((mod) => {
-      const { RedirectToSignIn } = mod;
-      const { useAuth } = mod;
-      return function AuthGuard({ children }: { children: React.ReactNode }) {
-        const { isSignedIn, isLoaded } = useAuth();
-        if (!isLoaded) {
-          return (
-            <div className="min-h-screen bg-cream flex items-center justify-center">
-              <div className="animate-pulse text-[--color-text-secondary]">Loading...</div>
-            </div>
-          );
-        }
-        if (!isSignedIn) {
-          return <RedirectToSignIn />;
-        }
-        return <>{children}</>;
-      };
-    }),
-  {
-    ssr: false,
-    loading: () => (
-      <div className="min-h-screen bg-cream flex items-center justify-center">
-        <div className="animate-pulse text-[--color-text-secondary]">Loading...</div>
-      </div>
-    ),
-  }
-);
+import { useClerkComponents } from "@/components/clerk-wrapper";
 
 type OrgInfo = {
   name: string;
@@ -95,6 +59,40 @@ const PLAN_COLORS: Record<string, string> = {
   business: "bg-amber-100 text-amber-700",
 };
 
+function AuthGuard({ children }: { children: React.ReactNode }) {
+  const clerk = useClerkComponents();
+  const useAuth = clerk?.useAuth;
+  const RedirectToSignIn = clerk?.RedirectToSignIn;
+
+  // Clerk not loaded yet
+  if (!useAuth) {
+    return (
+      <div className="min-h-screen bg-cream flex items-center justify-center">
+        <div className="animate-pulse text-[--color-text-secondary]">Loading...</div>
+      </div>
+    );
+  }
+
+  return <AuthGuardInner useAuth={useAuth} RedirectToSignIn={RedirectToSignIn}>{children}</AuthGuardInner>;
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function AuthGuardInner({ children, useAuth, RedirectToSignIn }: { children: React.ReactNode; useAuth: any; RedirectToSignIn: any }) {
+  const { isSignedIn, isLoaded } = useAuth();
+
+  if (!isLoaded) {
+    return (
+      <div className="min-h-screen bg-cream flex items-center justify-center">
+        <div className="animate-pulse text-[--color-text-secondary]">Loading...</div>
+      </div>
+    );
+  }
+  if (!isSignedIn) {
+    return <RedirectToSignIn />;
+  }
+  return <>{children}</>;
+}
+
 export default function DashboardLayout({
   children,
 }: {
@@ -102,6 +100,8 @@ export default function DashboardLayout({
 }) {
   const pathname = usePathname();
   const [org, setOrg] = useState<OrgInfo | null>(null);
+  const clerk = useClerkComponents();
+  const UserButton = clerk?.UserButton;
 
   useEffect(() => {
     fetch("/api/org")
@@ -117,7 +117,7 @@ export default function DashboardLayout({
   }
 
   return (
-    <ClerkAuthGuard>
+    <AuthGuard>
       <div className="min-h-screen bg-cream flex">
         {/* Sidebar */}
         <aside className="w-64 border-r border-border bg-white flex flex-col flex-shrink-0">
@@ -167,7 +167,7 @@ export default function DashboardLayout({
 
           {/* Footer */}
           <div className="px-6 py-4 border-t border-border flex items-center gap-3">
-            <ClerkUserButton />
+            {UserButton && <UserButton />}
             <Link
               href="/demo"
               className="text-xs text-[--color-text-secondary] hover:text-dark accent-hover"
@@ -180,6 +180,6 @@ export default function DashboardLayout({
         {/* Main content */}
         <main className="flex-1 overflow-auto">{children}</main>
       </div>
-    </ClerkAuthGuard>
+    </AuthGuard>
   );
 }
