@@ -6,47 +6,41 @@ import { useEffect, useState } from "react";
 import dynamic from "next/dynamic";
 import { ResolvlyLogo } from "@/components/resolvly-logo";
 
-const clerkConfigured = !!process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
-
-const ClerkUserButton = clerkConfigured
-  ? dynamic(
-      () => import("@clerk/nextjs").then((mod) => mod.UserButton),
-      { ssr: false }
-    )
-  : () => null;
+const ClerkUserButton = dynamic(
+  () => import("@clerk/nextjs").then((mod) => mod.UserButton),
+  { ssr: false }
+);
 
 // Client-side auth redirect — if Clerk is configured but user is not signed in
-const ClerkAuthGuard = clerkConfigured
-  ? dynamic(
-      () =>
-        import("@clerk/nextjs").then((mod) => {
-          const { RedirectToSignIn, ClerkLoaded, ClerkLoading } = mod;
-          const { useAuth } = mod;
-          return function AuthGuard({ children }: { children: React.ReactNode }) {
-            const { isSignedIn, isLoaded } = useAuth();
-            if (!isLoaded) {
-              return (
-                <div className="min-h-screen bg-cream flex items-center justify-center">
-                  <div className="animate-pulse text-[--color-text-secondary]">Loading...</div>
-                </div>
-              );
-            }
-            if (!isSignedIn) {
-              return <RedirectToSignIn />;
-            }
-            return <>{children}</>;
-          };
-        }),
-      {
-        ssr: false,
-        loading: () => (
-          <div className="min-h-screen bg-cream flex items-center justify-center">
-            <div className="animate-pulse text-[--color-text-secondary]">Loading...</div>
-          </div>
-        ),
-      }
-    )
-  : ({ children }: { children: React.ReactNode }) => <>{children}</>;
+const ClerkAuthGuard = dynamic(
+  () =>
+    import("@clerk/nextjs").then((mod) => {
+      const { RedirectToSignIn } = mod;
+      const { useAuth } = mod;
+      return function AuthGuard({ children }: { children: React.ReactNode }) {
+        const { isSignedIn, isLoaded } = useAuth();
+        if (!isLoaded) {
+          return (
+            <div className="min-h-screen bg-cream flex items-center justify-center">
+              <div className="animate-pulse text-[--color-text-secondary]">Loading...</div>
+            </div>
+          );
+        }
+        if (!isSignedIn) {
+          return <RedirectToSignIn />;
+        }
+        return <>{children}</>;
+      };
+    }),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="min-h-screen bg-cream flex items-center justify-center">
+        <div className="animate-pulse text-[--color-text-secondary]">Loading...</div>
+      </div>
+    ),
+  }
+);
 
 type OrgInfo = {
   name: string;

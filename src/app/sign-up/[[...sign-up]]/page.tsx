@@ -4,14 +4,10 @@ import Link from "next/link";
 import dynamic from "next/dynamic";
 import { ResolvlyLogo } from "@/components/resolvly-logo";
 
-const clerkConfigured = !!process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
-
-const ClerkSignUp = clerkConfigured
-  ? dynamic(
-      () => import("@clerk/nextjs").then((mod) => mod.SignUp),
-      { ssr: false }
-    )
-  : null;
+const ClerkSignUp = dynamic(
+  () => import("@clerk/nextjs").then((mod) => mod.SignUp),
+  { ssr: false }
+);
 
 export default function SignUpPage() {
   return (
@@ -36,33 +32,14 @@ export default function SignUpPage() {
             </p>
           </div>
           <div className="flex justify-center">
-            {ClerkSignUp ? (
-              <ClerkSignUp
-                appearance={{
-                  variables: {
-                    colorPrimary: "#DC4A2E",
-                    fontFamily: "DM Sans, sans-serif",
-                  },
-                }}
-              />
-            ) : (
-              <div className="text-center">
-                <p className="text-sm text-[--color-text-secondary] mb-4">
-                  Authentication is not configured yet.
-                </p>
-                <p className="text-xs text-[--color-text-secondary]">
-                  Set <code className="bg-taupe px-1.5 py-0.5 rounded font-mono">NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY</code> and{" "}
-                  <code className="bg-taupe px-1.5 py-0.5 rounded font-mono">CLERK_SECRET_KEY</code> in your{" "}
-                  <code className="bg-taupe px-1.5 py-0.5 rounded font-mono">.env.local</code> to enable auth.
-                </p>
-                <Link
-                  href="/onboarding"
-                  className="inline-block mt-6 text-sm font-medium bg-dark text-cream px-6 py-2.5 rounded-full hover:bg-[#2C2622] accent-hover"
-                >
-                  Continue to Onboarding
-                </Link>
-              </div>
-            )}
+            <ClerkSignUp
+              appearance={{
+                variables: {
+                  colorPrimary: "#DC4A2E",
+                  fontFamily: "DM Sans, sans-serif",
+                },
+              }}
+            />
           </div>
         </div>
       </div>

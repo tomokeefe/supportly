@@ -28,8 +28,6 @@ export const metadata: Metadata = {
     "AI-powered customer support that handles 70%+ of conversations at $0.05 each. Stop missing calls. Start closing tickets.",
 };
 
-const clerkConfigured = !!process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
-
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -40,11 +38,7 @@ export default function RootLayout({
       <body
         className={`${dmSans.variable} ${dmSerifDisplay.variable} ${jetbrainsMono.variable} font-sans antialiased`}
       >
-        {clerkConfigured ? (
-          <ClerkWrapper>{children}</ClerkWrapper>
-        ) : (
-          children
-        )}
+        <ClerkWrapper>{children}</ClerkWrapper>
       </body>
     </html>
   );
