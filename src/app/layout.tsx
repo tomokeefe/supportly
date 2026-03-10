@@ -63,13 +63,26 @@ export default function RootLayout({
   return (
     <html lang="en">
       <head>
-        {clerkPk && clerkScriptUrl && (
-          <script
-            data-clerk-publishable-key={clerkPk}
-            src={clerkScriptUrl}
-            crossOrigin="anonymous"
-            async
-          />
+        {clerkDomain && (
+          <>
+            {/* Fix broken Clerk script URLs from the bundled @clerk/nextjs code.
+                The bundled code has "" baked in for the publishable key, producing
+                URLs like "https://npm/..." (missing domain). This patch intercepts
+                script src assignments and rewrites them to use the correct domain. */}
+            <script
+              dangerouslySetInnerHTML={{
+                __html: `(function(){var d=${JSON.stringify(clerkDomain)};var o=Object.getOwnPropertyDescriptor(HTMLScriptElement.prototype,'src');if(!o||!o.set)return;var s=o.set;Object.defineProperty(HTMLScriptElement.prototype,'src',{set:function(v){if(typeof v==='string'&&(v.startsWith('https://npm/')||v.startsWith('https:///npm/'))){v=v.replace(/^https:\\/\\/\\/?npm\\//,'https://'+d+'/npm/');}s.call(this,v);},get:o.get,configurable:true});})();`,
+              }}
+            />
+            {clerkPk && (
+              <script
+                data-clerk-publishable-key={clerkPk}
+                src={clerkScriptUrl}
+                crossOrigin="anonymous"
+                async
+              />
+            )}
+          </>
         )}
       </head>
       <body
