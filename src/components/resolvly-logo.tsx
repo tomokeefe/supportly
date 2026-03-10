@@ -1,14 +1,10 @@
-/**
- * Resolvly logo — embeds the original SVG file as an isolated document
- * via <object>. This prevents any page CSS (antialiased, font-smoothing,
- * inherited styles) from altering the SVG rendering. The file at
- * public/resolvly-logo.svg is served completely untouched.
- */
+import Image from "next/image";
 
 type LogoSize = "sm" | "md" | "lg";
 
+// PNG is 824×225 — aspect ratio 3.662:1
 const HEIGHTS: Record<LogoSize, number> = {
-  sm: 32,  // footer, dashboard sidebar
+  sm: 36,  // footer, dashboard sidebar
   md: 48,  // nav, auth pages, onboarding
   lg: 56,  // hero or splash if needed
 };
@@ -21,15 +17,15 @@ export function ResolvlyLogo({
   className?: string;
 }) {
   const h = HEIGHTS[size];
+  const w = Math.round(h * (824 / 225));
   return (
-    <object
-      type="image/svg+xml"
-      data="/resolvly-logo.svg"
-      aria-label="Resolvly"
-      style={{ height: h, width: "auto", pointerEvents: "none", display: "block" }}
+    <Image
+      src="/resolvly-logo.png"
+      alt="Resolvly"
+      width={w}
+      height={h}
+      priority
       className={className}
-    >
-      Resolvly
-    </object>
+    />
   );
 }
