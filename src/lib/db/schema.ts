@@ -77,6 +77,7 @@ export const organizations = pgTable("organizations", {
     .default(0),
   currentPeriodStart: timestamp("current_period_start"),
   clerkUserId: varchar("clerk_user_id", { length: 255 }),
+  affiliateCode: varchar("affiliate_code", { length: 50 }),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
@@ -137,12 +138,68 @@ export const dailyStats = pgTable("daily_stats", {
   avgConfidence: real("avg_confidence"),
 });
 
+// ── Affiliates ──────────────────────────────────────────────────────
+export const affiliateStatusEnum = pgEnum("affiliate_status", [
+  "pending",
+  "active",
+  "suspended",
+]);
+
+export const affiliates = pgTable("affiliates", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  name: varchar("name", { length: 255 }).notNull(),
+  email: varchar("email", { length: 255 }).notNull().unique(),
+  company: varchar("company", { length: 255 }),
+  referralCode: varchar("referral_code", { length: 50 }).notNull().unique(),
+  commissionRate: real("commission_rate").notNull().default(0.2), // 20%
+  status: affiliateStatusEnum("status").notNull().default("pending"),
+  totalEarned: integer("total_earned").notNull().default(0), // cents
+  totalPaid: integer("total_paid").notNull().default(0), // cents
+  paypalEmail: varchar("paypal_email", { length: 255 }),
+  metadata: jsonb("metadata").default({}),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+export const referrals = pgTable("referrals", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  affiliateId: uuid("affiliate_id")
+    .notNull()
+    .references(() => affiliates.id, { onDelete: "cascade" }),
+  orgId: uuid("org_id")
+    .references(() => organizations.id, { onDelete: "set null" }),
+  customerEmail: varchar("customer_email", { length: 255 }),
+  plan: planEnum("plan"),
+  status: varchar("status", { length: 50 }).notNull().default("pending"), // pending | converted | cancelled
+  commissionAmount: integer("commission_amount").default(0), // cents per month
+  convertedAt: timestamp("converted_at"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export const commissionPayouts = pgTable("commission_payouts", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  affiliateId: uuid("affiliate_id")
+    .notNull()
+    .references(() => affiliates.id, { onDelete: "cascade" }),
+  amount: integer("amount").notNull(), // cents
+  status: varchar("status", { length: 50 }).notNull().default("pending"), // pending | processing | paid | failed
+  payoutMethod: varchar("payout_method", { length: 50 }),
+  reference: varchar("reference", { length: 255 }),
+  periodStart: timestamp("period_start").notNull(),
+  periodEnd: timestamp("period_end").notNull(),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
 // ── Types ────────────────────────────────────────────────────────────
 export type Organization = typeof organizations.$inferSelect;
 export type KnowledgeItem = typeof knowledgeItems.$inferSelect;
 export type Conversation = typeof conversations.$inferSelect;
 export type Message = typeof messages.$inferSelect;
 export type DailyStat = typeof dailyStats.$inferSelect;
+
+export type Affiliate = typeof affiliates.$inferSelect;
+export type Referral = typeof referrals.$inferSelect;
+export type CommissionPayout = typeof commissionPayouts.$inferSelect;
 
 export type OrgSettings = {
   confidenceThreshold: number;

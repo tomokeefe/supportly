@@ -20,11 +20,11 @@ export const PLANS = {
   },
   starter: {
     name: "Starter",
-    price: 29,
-    conversationLimit: 500,
-    limit: "500 conversations/mo",
+    price: 49,
+    conversationLimit: 300,
+    limit: "300 conversations/mo",
     features: [
-      "500 conversations/mo",
+      "300 conversations/mo",
       "1 knowledge base",
       "Chat + Email",
       "Basic analytics",
@@ -33,12 +33,12 @@ export const PLANS = {
   },
   pro: {
     name: "Pro",
-    price: 79,
-    conversationLimit: 2500,
-    limit: "2,500 conversations/mo",
+    price: 149,
+    conversationLimit: 2000,
+    limit: "2,000 conversations/mo",
     recommended: true as const,
     features: [
-      "2,500 conversations/mo",
+      "2,000 conversations/mo",
       "3 knowledge bases",
       "All channels",
       "Advanced analytics",
@@ -48,11 +48,11 @@ export const PLANS = {
   },
   business: {
     name: "Business",
-    price: 199,
-    conversationLimit: 999999,
-    limit: "Unlimited conversations",
+    price: 399,
+    conversationLimit: 10000,
+    limit: "10,000 conversations/mo",
     features: [
-      "Unlimited conversations",
+      "10,000 conversations/mo",
       "Unlimited knowledge bases",
       "All channels + voice",
       "API access",
@@ -73,6 +73,17 @@ export const PLAN_LIMITS = {
 } as const;
 
 export type PlanLimits = (typeof PLAN_LIMITS)[PlanName];
+
+/** Affiliate commission rate (20% of monthly recurring revenue) */
+export const AFFILIATE_COMMISSION_RATE = 0.20;
+
+/** Commission amounts per plan (monthly) */
+export const AFFILIATE_COMMISSIONS: Record<PlanName, number> = {
+  free: 0,
+  starter: PLANS.starter.price * AFFILIATE_COMMISSION_RATE,   // $9.80
+  pro: PLANS.pro.price * AFFILIATE_COMMISSION_RATE,           // $29.80
+  business: PLANS.business.price * AFFILIATE_COMMISSION_RATE, // $79.80
+};
 
 /** Returns the minimum plan required to unlock a gated feature */
 export function getMinPlanForFeature(

@@ -8,9 +8,17 @@ export function Footer() {
         <Link href="/" aria-label="Resolvly home">
           <ResolvlyLogo size="sm" />
         </Link>
-        <p className="text-sm text-[--color-text-secondary]">
-          &copy; {new Date().getFullYear()} Resolvly. All rights reserved.
-        </p>
+        <div className="flex items-center gap-6">
+          <Link
+            href="/partners"
+            className="text-sm text-[--color-text-secondary] hover:text-dark"
+          >
+            Partners
+          </Link>
+          <p className="text-sm text-[--color-text-secondary]">
+            &copy; {new Date().getFullYear()} Resolvly. All rights reserved.
+          </p>
+        </div>
       </div>
     </footer>
   );

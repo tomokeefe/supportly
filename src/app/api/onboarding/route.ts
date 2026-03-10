@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
+import { eq } from "drizzle-orm";
 import { db } from "@/lib/db";
-import { organizations } from "@/lib/db/schema";
-import { PLANS, type PlanName } from "@/lib/plans";
+import { organizations, affiliates, referrals } from "@/lib/db/schema";
+import { PLANS, AFFILIATE_COMMISSIONS, type PlanName } from "@/lib/plans";
 
 const onboardingSchema = z.object({
   business: z.object({
@@ -70,6 +71,16 @@ export async function POST(req: NextRequest) {
     // Clerk not configured — continue without it
   }
 
+  // Check for affiliate referral cookie
+  let affiliateCode: string | null = null;
+  try {
+    const { cookies } = await import("next/headers");
+    const cookieStore = await cookies();
+    affiliateCode = cookieStore.get("resolvly_ref")?.value ?? null;
+  } catch {
+    // cookies() not available
+  }
+
   // Insert org into DB
   if (db) {
     await db.insert(organizations).values({
@@ -80,7 +91,27 @@ export async function POST(req: NextRequest) {
       plan: plan as PlanName,
       conversationLimit: PLANS[plan as PlanName].conversationLimit,
       clerkUserId: userId,
+      affiliateCode,
     });
+
+    // Create referral record if affiliate attribution exists
+    if (affiliateCode) {
+      const affiliate = await db.query.affiliates.findFirst({
+        where: eq(affiliates.referralCode, affiliateCode),
+      });
+      if (affiliate && affiliate.status === "active") {
+        const planKey = plan as PlanName;
+        const commissionCents = Math.round(AFFILIATE_COMMISSIONS[planKey] * 100);
+        await db.insert(referrals).values({
+          affiliateId: affiliate.id,
+          orgId,
+          plan: planKey,
+          status: planKey === "free" ? "pending" : "converted",
+          commissionAmount: commissionCents,
+          convertedAt: planKey !== "free" ? new Date() : null,
+        });
+      }
+    }
   }
 
   // Set orgId cookie so the dashboard can find this org without Clerk

@@ -29,22 +29,22 @@ const PLANS = [
     key: "STARTER",
     name: "Resolvly Starter",
     description:
-      "500 conversations/mo, Chat + Email, Basic analytics, Email support",
-    price: 2900, // cents
+      "300 conversations/mo, Chat + Email, Basic analytics, Email support",
+    price: 4900, // cents
   },
   {
     key: "PRO",
     name: "Resolvly Pro",
     description:
-      "2,500 conversations/mo, All channels, Advanced analytics, Custom AI persona, Priority support",
-    price: 7900,
+      "2,000 conversations/mo, All channels, Advanced analytics, Custom AI persona, Priority support",
+    price: 14900,
   },
   {
     key: "BUSINESS",
     name: "Resolvly Business",
     description:
-      "Unlimited conversations, All channels + voice, API access, SLA guarantee, Dedicated account manager",
-    price: 19900,
+      "10,000 conversations/mo, All channels + voice, API access, SLA guarantee, Dedicated account manager",
+    price: 39900,
   },
 ];
 

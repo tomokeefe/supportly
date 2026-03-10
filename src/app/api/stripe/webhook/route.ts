@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import { eq } from "drizzle-orm";
+import { eq, and } from "drizzle-orm";
 import { stripe } from "@/lib/stripe";
 import { db } from "@/lib/db";
-import { organizations } from "@/lib/db/schema";
-import { PLANS, type PlanName } from "@/lib/plans";
+import { organizations, affiliates, referrals } from "@/lib/db/schema";
+import { PLANS, AFFILIATE_COMMISSIONS, type PlanName } from "@/lib/plans";
 
 export async function POST(req: NextRequest) {
   if (!stripe || !db) {
@@ -50,6 +50,56 @@ export async function POST(req: NextRequest) {
             updatedAt: new Date(),
           })
           .where(eq(organizations.id, orgId));
+
+        // Track affiliate conversion — update referral to "converted" and record commission
+        const org = await db.query.organizations.findFirst({
+          where: eq(organizations.id, orgId),
+        });
+        if (org?.affiliateCode) {
+          const affiliate = await db.query.affiliates.findFirst({
+            where: eq(affiliates.referralCode, org.affiliateCode),
+          });
+          if (affiliate) {
+            const commissionCents = Math.round(
+              AFFILIATE_COMMISSIONS[plan] * 100
+            );
+            // Update existing pending referral or create new one
+            const existingRef = await db.query.referrals.findFirst({
+              where: and(
+                eq(referrals.affiliateId, affiliate.id),
+                eq(referrals.orgId, orgId)
+              ),
+            });
+            if (existingRef) {
+              await db
+                .update(referrals)
+                .set({
+                  status: "converted",
+                  plan,
+                  commissionAmount: commissionCents,
+                  convertedAt: new Date(),
+                })
+                .where(eq(referrals.id, existingRef.id));
+            } else {
+              await db.insert(referrals).values({
+                affiliateId: affiliate.id,
+                orgId,
+                plan,
+                status: "converted",
+                commissionAmount: commissionCents,
+                convertedAt: new Date(),
+              });
+            }
+            // Increment affiliate total earned
+            await db
+              .update(affiliates)
+              .set({
+                totalEarned: affiliate.totalEarned + commissionCents,
+                updatedAt: new Date(),
+              })
+              .where(eq(affiliates.id, affiliate.id));
+          }
+        }
       }
       break;
     }
