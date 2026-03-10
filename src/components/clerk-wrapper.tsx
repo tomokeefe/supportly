@@ -18,16 +18,15 @@ export function ClerkWrapper({
   // encoded domain. But on Vercel, process.env.NEXT_PUBLIC_* is statically
   // replaced at build time — if the env var wasn't available during the build,
   // the compiled JS has "" baked in, producing `https:///npm/...`.
-  // We bypass this by passing clerkJSUrl directly, derived server-side.
-  const clerkJSUrl = clerkDomain
-    ? `https://${clerkDomain}/npm/@clerk/clerk-js@6/dist/clerk.browser.js`
-    : undefined;
+  // We bypass this by passing __internal_clerkJSUrl directly, derived
+  // server-side where the env var is available at runtime.
+  const extra: Record<string, string> = {};
+  if (clerkDomain) {
+    extra.__internal_clerkJSUrl = `https://${clerkDomain}/npm/@clerk/clerk-js@6/dist/clerk.browser.js`;
+  }
 
   return (
-    <ClerkProvider
-      publishableKey={publishableKey}
-      {...(clerkJSUrl ? { clerkJSUrl } : {})}
-    >
+    <ClerkProvider publishableKey={publishableKey} {...extra}>
       {children}
     </ClerkProvider>
   );

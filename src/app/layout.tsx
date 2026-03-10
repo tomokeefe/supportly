@@ -44,7 +44,7 @@ export default function RootLayout({
   if (clerkPk) {
     try {
       const base64 = clerkPk.replace(/^pk_(test|live)_/, "");
-      clerkDomain = Buffer.from(base64, "base64").toString().replace(/\$$/, "");
+      clerkDomain = Buffer.from(base64, "base64").toString().split("$")[0];
     } catch {
       // Invalid key format — ignore
     }
