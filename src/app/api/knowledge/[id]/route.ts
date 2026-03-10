@@ -4,6 +4,7 @@ import { eq, and } from "drizzle-orm";
 import { getAuthContext } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { knowledgeItems } from "@/lib/db/schema";
+import { generateEmbedding } from "@/lib/ai/embeddings";
 
 const updateSchema = z.object({
   title: z.string().min(1).max(500).optional(),
@@ -52,6 +53,23 @@ export async function PUT(
     })
     .where(eq(knowledgeItems.id, id))
     .returning();
+
+  // Regenerate embedding if title or content changed (non-blocking)
+  if (parsed.data.title || parsed.data.content) {
+    const title = parsed.data.title ?? existing.title;
+    const content = parsed.data.content ?? existing.content;
+    generateEmbedding(`${title}\n${content}`)
+      .then((embedding) => {
+        if (embedding && db) {
+          db.update(knowledgeItems)
+            .set({ embedding })
+            .where(eq(knowledgeItems.id, id))
+            .then(() => {})
+            .catch((err) => console.error("Failed to store embedding:", err));
+        }
+      })
+      .catch((err) => console.error("Embedding generation failed:", err));
+  }
 
   return NextResponse.json({ item: updated });
 }

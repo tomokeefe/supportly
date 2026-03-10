@@ -1,30 +1,23 @@
-import Link from "next/link";
 import Script from "next/script";
-import { ResolvlyLogo } from "@/components/resolvly-logo";
+import { auth } from "@clerk/nextjs/server";
+import { Nav } from "@/components/nav";
 
 export const metadata = {
   title: "Live Demo — Resolvly",
 };
 
-export default function DemoPage() {
+export default async function DemoPage() {
+  let isSignedIn = false;
+  try {
+    const { userId } = await auth();
+    isSignedIn = !!userId;
+  } catch {
+    // Clerk not configured
+  }
+
   return (
     <div className="min-h-screen bg-cream">
-      {/* Nav */}
-      <nav className="border-b border-border bg-cream">
-        <div className="max-w-7xl mx-auto px-6 lg:px-12 py-5 flex items-center justify-between">
-          <Link href="/" aria-label="Resolvly home">
-            <ResolvlyLogo />
-          </Link>
-          <div className="flex items-center gap-6">
-            <Link href="/dashboard" className="text-sm text-[--color-text-secondary] hover:text-dark accent-hover">
-              Dashboard
-            </Link>
-            <Link href="/" className="text-sm text-[--color-text-secondary] hover:text-dark accent-hover">
-              Home
-            </Link>
-          </div>
-        </div>
-      </nav>
+      <Nav isSignedIn={isSignedIn} />
 
       {/* Demo content - simulating a property management website */}
       <div className="max-w-4xl mx-auto px-6 py-12">

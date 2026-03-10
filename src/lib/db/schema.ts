@@ -9,7 +9,24 @@ import {
   integer,
   date,
   pgEnum,
+  customType,
 } from "drizzle-orm/pg-core";
+
+// Custom pgvector type for embeddings
+const vector = customType<{ data: number[]; driverData: string }>({
+  dataType() {
+    return "vector(256)";
+  },
+  toDriver(value: number[]): string {
+    return `[${value.join(",")}]`;
+  },
+  fromDriver(value: string): number[] {
+    return value
+      .replace(/^\[|\]$/g, "")
+      .split(",")
+      .map(Number);
+  },
+});
 
 export const planEnum = pgEnum("plan", [
   "free",
@@ -73,6 +90,7 @@ export const knowledgeItems = pgTable("knowledge_items", {
   title: varchar("title", { length: 500 }).notNull(),
   content: text("content").notNull(),
   category: varchar("category", { length: 100 }),
+  embedding: vector("embedding"),
   metadata: jsonb("metadata").default({}),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),

@@ -4,6 +4,7 @@ import { eq, desc } from "drizzle-orm";
 import { getAuthContext } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { knowledgeItems } from "@/lib/db/schema";
+import { generateEmbedding } from "@/lib/ai/embeddings";
 
 const createSchema = z.object({
   title: z.string().min(1).max(500),
@@ -62,6 +63,19 @@ export async function POST(req: NextRequest) {
       category: parsed.data.category ?? "general",
     })
     .returning();
+
+  // Auto-generate embedding (non-blocking)
+  generateEmbedding(`${parsed.data.title}\n${parsed.data.content}`)
+    .then((embedding) => {
+      if (embedding && db) {
+        db.update(knowledgeItems)
+          .set({ embedding })
+          .where(eq(knowledgeItems.id, item.id))
+          .then(() => {})
+          .catch((err) => console.error("Failed to store embedding:", err));
+      }
+    })
+    .catch((err) => console.error("Embedding generation failed:", err));
 
   return NextResponse.json({ item }, { status: 201 });
 }

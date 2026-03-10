@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { eq, sql } from "drizzle-orm";
-import { runAgent, searchKnowledge } from "@/lib/ai/agent";
+import { runAgent, searchKnowledgeHybrid } from "@/lib/ai/agent";
 import { db } from "@/lib/db";
 import {
   organizations,
@@ -90,7 +90,7 @@ export async function POST(req: NextRequest) {
     }
 
     // ── Find relevant knowledge ──
-    const relevantKnowledge = searchKnowledge(message, knowledge);
+    const relevantKnowledge = await searchKnowledgeHybrid(message, orgId, knowledge);
 
     // ── Build conversation history ──
     const history: { role: "user" | "assistant"; content: string }[] = [];
@@ -213,6 +213,9 @@ export async function POST(req: NextRequest) {
       },
       shouldEscalate: response.shouldEscalate,
       sourcesUsed: response.sourcesUsed,
+      suggestions: response.suggestions,
+      sentiment: response.sentiment,
+      language: response.language,
     });
   } catch (error) {
     console.error("Chat API error:", error);
