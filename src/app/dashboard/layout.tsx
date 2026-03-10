@@ -15,6 +15,39 @@ const ClerkUserButton = clerkConfigured
     )
   : () => null;
 
+// Client-side auth redirect — if Clerk is configured but user is not signed in
+const ClerkAuthGuard = clerkConfigured
+  ? dynamic(
+      () =>
+        import("@clerk/nextjs").then((mod) => {
+          const { RedirectToSignIn, ClerkLoaded, ClerkLoading } = mod;
+          const { useAuth } = mod;
+          return function AuthGuard({ children }: { children: React.ReactNode }) {
+            const { isSignedIn, isLoaded } = useAuth();
+            if (!isLoaded) {
+              return (
+                <div className="min-h-screen bg-cream flex items-center justify-center">
+                  <div className="animate-pulse text-[--color-text-secondary]">Loading...</div>
+                </div>
+              );
+            }
+            if (!isSignedIn) {
+              return <RedirectToSignIn />;
+            }
+            return <>{children}</>;
+          };
+        }),
+      {
+        ssr: false,
+        loading: () => (
+          <div className="min-h-screen bg-cream flex items-center justify-center">
+            <div className="animate-pulse text-[--color-text-secondary]">Loading...</div>
+          </div>
+        ),
+      }
+    )
+  : ({ children }: { children: React.ReactNode }) => <>{children}</>;
+
 type OrgInfo = {
   name: string;
   plan?: string;
@@ -90,67 +123,69 @@ export default function DashboardLayout({
   }
 
   return (
-    <div className="min-h-screen bg-cream flex">
-      {/* Sidebar */}
-      <aside className="w-64 border-r border-border bg-white flex flex-col flex-shrink-0">
-        {/* Logo */}
-        <div className="px-6 py-5 border-b border-border">
-          <Link href="/" aria-label="Resolvly home">
-            <ResolvlyLogo size="md" />
-          </Link>
-        </div>
+    <ClerkAuthGuard>
+      <div className="min-h-screen bg-cream flex">
+        {/* Sidebar */}
+        <aside className="w-64 border-r border-border bg-white flex flex-col flex-shrink-0">
+          {/* Logo */}
+          <div className="px-6 py-5 border-b border-border">
+            <Link href="/" aria-label="Resolvly home">
+              <ResolvlyLogo size="md" />
+            </Link>
+          </div>
 
-        {/* Org info */}
-        <div className="px-6 py-4 border-b border-border">
-          <p className="text-sm font-medium text-dark truncate">
-            {org?.name ?? "Loading..."}
-          </p>
-          {org?.plan && (
-            <span
-              className={`inline-block mt-1 text-xs font-medium px-2 py-0.5 rounded-full capitalize ${
-                PLAN_COLORS[org.plan] ?? PLAN_COLORS.free
-              }`}
-            >
-              {org.plan} plan
-            </span>
-          )}
-        </div>
-
-        {/* Nav items */}
-        <nav className="flex-1 px-3 py-4 space-y-1">
-          {NAV_ITEMS.map((item) => {
-            const active = isActive(item.href, item.exact);
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium accent-hover ${
-                  active
-                    ? "bg-vermillion/10 text-vermillion"
-                    : "text-[--color-text-secondary] hover:text-dark hover:bg-taupe/50"
+          {/* Org info */}
+          <div className="px-6 py-4 border-b border-border">
+            <p className="text-sm font-medium text-dark truncate">
+              {org?.name ?? "Loading..."}
+            </p>
+            {org?.plan && (
+              <span
+                className={`inline-block mt-1 text-xs font-medium px-2 py-0.5 rounded-full capitalize ${
+                  PLAN_COLORS[org.plan] ?? PLAN_COLORS.free
                 }`}
               >
-                {item.icon}
-                {item.label}
-              </Link>
-            );
-          })}
-        </nav>
+                {org.plan} plan
+              </span>
+            )}
+          </div>
 
-        {/* Footer */}
-        <div className="px-6 py-4 border-t border-border flex items-center gap-3">
-          <ClerkUserButton />
-          <Link
-            href="/demo"
-            className="text-xs text-[--color-text-secondary] hover:text-dark accent-hover"
-          >
-            View Demo
-          </Link>
-        </div>
-      </aside>
+          {/* Nav items */}
+          <nav className="flex-1 px-3 py-4 space-y-1">
+            {NAV_ITEMS.map((item) => {
+              const active = isActive(item.href, item.exact);
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium accent-hover ${
+                    active
+                      ? "bg-vermillion/10 text-vermillion"
+                      : "text-[--color-text-secondary] hover:text-dark hover:bg-taupe/50"
+                  }`}
+                >
+                  {item.icon}
+                  {item.label}
+                </Link>
+              );
+            })}
+          </nav>
 
-      {/* Main content */}
-      <main className="flex-1 overflow-auto">{children}</main>
-    </div>
+          {/* Footer */}
+          <div className="px-6 py-4 border-t border-border flex items-center gap-3">
+            <ClerkUserButton />
+            <Link
+              href="/demo"
+              className="text-xs text-[--color-text-secondary] hover:text-dark accent-hover"
+            >
+              View Demo
+            </Link>
+          </div>
+        </aside>
+
+        {/* Main content */}
+        <main className="flex-1 overflow-auto">{children}</main>
+      </div>
+    </ClerkAuthGuard>
   );
 }
