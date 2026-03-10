@@ -65,6 +65,7 @@ export default function RootLayout({
       <head>
         {clerkPk && clerkScriptUrl && (
           <script
+            data-clerk-publishable-key={clerkPk}
             src={clerkScriptUrl}
             crossOrigin="anonymous"
             async

@@ -10,8 +10,9 @@ import {
 } from "react";
 
 // ---------------------------------------------------------------------------
-// Clerk loaded from CDN script in <head> (see layout.tsx), then manually
-// initialized here with .load() which includes UI components.
+// Clerk loaded from CDN script in <head> with data-clerk-publishable-key.
+// The script auto-initializes Clerk AND loads UI components asynchronously.
+// We poll for window.Clerk to be fully ready before providing it via context.
 //
 // This bypasses @clerk/nextjs npm package on the client, which breaks on
 // Vercel because NEXT_PUBLIC_* env vars are statically replaced with ""
@@ -131,45 +132,7 @@ export function ClerkUserButton() {
 }
 
 // ---------------------------------------------------------------------------
-// Module-level singleton to survive re-renders and HMR
-// ---------------------------------------------------------------------------
-let clerkInitPromise: Promise<ClerkInstance> | null = null;
-
-function initClerk(publishableKey: string): Promise<ClerkInstance> {
-  if (clerkInitPromise) return clerkInitPromise;
-
-  clerkInitPromise = (async () => {
-    // Wait for the CDN script (loaded in <head>) to set window.Clerk
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const Ctor = await new Promise<any>((resolve) => {
-      function check() {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const c = (window as any).Clerk;
-        // Before .load(), window.Clerk is the class constructor
-        if (c && typeof c === "function") {
-          resolve(c);
-        } else {
-          setTimeout(check, 50);
-        }
-      }
-      check();
-    });
-
-    const instance = new Ctor(publishableKey);
-    await instance.load();
-    return instance;
-  })();
-
-  // Allow retry on failure
-  clerkInitPromise.catch(() => {
-    clerkInitPromise = null;
-  });
-
-  return clerkInitPromise;
-}
-
-// ---------------------------------------------------------------------------
-// Provider
+// Provider — waits for the CDN-loaded Clerk to be fully initialized
 // ---------------------------------------------------------------------------
 export function ClerkWrapper({
   children,
@@ -185,9 +148,43 @@ export function ClerkWrapper({
   useEffect(() => {
     if (!publishableKey || !clerkDomain) return;
 
-    initClerk(publishableKey)
-      .then(setClerk)
-      .catch((err) => console.error("Clerk init failed:", err));
+    let cancelled = false;
+
+    // The CDN script in <head> auto-initializes with data-clerk-publishable-key.
+    // window.Clerk starts as undefined, becomes an instance, then becomes
+    // fully loaded (with UI components) asynchronously.
+    // We use Clerk's addListener to know when it's truly ready.
+    function waitForClerk() {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const c = (window as any).Clerk;
+
+      if (!c || typeof c.addListener !== "function") {
+        // Not ready yet — keep polling
+        if (!cancelled) setTimeout(waitForClerk, 100);
+        return;
+      }
+
+      // Clerk instance exists. Use addListener to detect when fully loaded.
+      // The listener fires immediately if already loaded, and again on state changes.
+      const unsub = c.addListener(() => {
+        if (c.loaded && !cancelled) {
+          setClerk(c);
+          if (typeof unsub === "function") unsub();
+        }
+      });
+
+      // Also check immediately in case it's already loaded
+      if (c.loaded && !cancelled) {
+        setClerk(c);
+        if (typeof unsub === "function") unsub();
+      }
+    }
+
+    waitForClerk();
+
+    return () => {
+      cancelled = true;
+    };
   }, [publishableKey, clerkDomain]);
 
   return <ClerkCtx.Provider value={clerk}>{children}</ClerkCtx.Provider>;
