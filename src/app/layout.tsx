@@ -33,7 +33,11 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const clerkPk = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY ?? "";
+  // Sanitize: the Vercel env var may contain multiple keys concatenated
+  // (e.g. pk + secret key on next line). Extract only the pk_* value and
+  // NEVER send the secret key to the client.
+  const rawPk = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY ?? "";
+  const clerkPk = rawPk.split(/[\r\n]/)[0].trim();
 
   // Derive the Clerk Frontend API domain from the publishable key.
   // Clerk constructs script URLs from this domain, but since the env var
