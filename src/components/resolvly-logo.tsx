@@ -1,11 +1,15 @@
-import Image from "next/image";
+/**
+ * Resolvly SVG logo — renders at the SVG's natural aspect ratio (221.2 × 71.5)
+ * to avoid any distortion. Size is controlled via height only; width scales
+ * automatically.
+ */
 
 type LogoSize = "sm" | "md" | "lg";
 
-const SIZES: Record<LogoSize, { height: number; width: number }> = {
-  sm: { height: 32, width: 99 },   // footer, dashboard sidebar
-  md: { height: 40, width: 124 },  // nav, auth pages, onboarding
-  lg: { height: 52, width: 161 },  // hero or splash if needed
+const HEIGHTS: Record<LogoSize, number> = {
+  sm: 32,  // footer, dashboard sidebar
+  md: 48,  // nav, auth pages, onboarding
+  lg: 56,  // hero or splash if needed
 };
 
 export function ResolvlyLogo({
@@ -15,14 +19,14 @@ export function ResolvlyLogo({
   size?: LogoSize;
   className?: string;
 }) {
-  const dims = SIZES[size];
+  const h = HEIGHTS[size];
   return (
-    <Image
+    // eslint-disable-next-line @next/next/no-img-element
+    <img
       src="/resolvly-logo.svg"
       alt="Resolvly"
-      width={dims.width}
-      height={dims.height}
-      priority
+      height={h}
+      style={{ height: h, width: "auto" }}
       className={className}
     />
   );
