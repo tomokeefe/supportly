@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { DM_Serif_Display, DM_Sans, JetBrains_Mono } from "next/font/google";
-import { ClerkProvider } from "@clerk/nextjs";
+import { ClerkWrapper } from "@/components/clerk-wrapper";
 import "./globals.css";
 
 const dmSerifDisplay = DM_Serif_Display({
@@ -48,8 +48,12 @@ export default function RootLayout({
   }
 
   return (
-    <ClerkProvider>
-      <html lang="en">{body}</html>
-    </ClerkProvider>
+    <html lang="en">
+      <body
+        className={`${dmSans.variable} ${dmSerifDisplay.variable} ${jetbrainsMono.variable} font-sans antialiased`}
+      >
+        <ClerkWrapper>{children}</ClerkWrapper>
+      </body>
+    </html>
   );
 }
