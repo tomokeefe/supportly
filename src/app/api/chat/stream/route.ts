@@ -87,6 +87,17 @@ export async function POST(req: NextRequest) {
         );
       }
 
+      if (org.status === "suspended") {
+        return new Response(
+          JSON.stringify({
+            error: "Account suspended",
+            message:
+              "This support channel is temporarily unavailable. Please contact the business directly.",
+          }),
+          { status: 403, headers: { "Content-Type": "application/json", ...CORS_HEADERS } }
+        );
+      }
+
       orgId = org.id;
       orgSettings = org.settings as OrgSettings;
       orgConversationLimit = org.conversationLimit;

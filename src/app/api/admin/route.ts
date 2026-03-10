@@ -40,6 +40,7 @@ export async function GET() {
       conversationLimit: organizations.conversationLimit,
       currentPeriodConversations: organizations.currentPeriodConversations,
       stripeCustomerId: organizations.stripeCustomerId,
+      status: organizations.status,
       affiliateCode: organizations.affiliateCode,
       createdAt: organizations.createdAt,
     })

@@ -35,6 +35,8 @@ export const planEnum = pgEnum("plan", [
   "business",
 ]);
 
+export const orgStatusEnum = pgEnum("org_status", ["active", "suspended"]);
+
 export const conversationStatusEnum = pgEnum("conversation_status", [
   "active",
   "escalated",
@@ -69,6 +71,7 @@ export const organizations = pgTable("organizations", {
       branding: { primaryColor: "#2563eb", position: "bottom-right" },
     }),
   plan: planEnum("plan").notNull().default("free"),
+  status: orgStatusEnum("status").notNull().default("active"),
   stripeCustomerId: varchar("stripe_customer_id", { length: 255 }),
   stripeSubscriptionId: varchar("stripe_subscription_id", { length: 255 }),
   conversationLimit: integer("conversation_limit").notNull().default(50),

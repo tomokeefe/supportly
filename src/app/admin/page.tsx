@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { ResolvlyLogo } from "@/components/resolvly-logo";
 
@@ -17,6 +17,7 @@ type AdminData = {
     name: string;
     slug: string;
     plan: string;
+    status: string;
     conversationLimit: number;
     currentPeriodConversations: number;
     stripeCustomerId: string | null;
@@ -61,12 +62,74 @@ function StatCard({ label, value }: { label: string; value: string }) {
   );
 }
 
+function ConfirmModal({
+  title,
+  message,
+  confirmLabel,
+  confirmVariant = "danger",
+  onConfirm,
+  onCancel,
+}: {
+  title: string;
+  message: string;
+  confirmLabel: string;
+  confirmVariant?: "danger" | "primary";
+  onConfirm: () => void;
+  onCancel: () => void;
+}) {
+  return (
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+      <div className="bg-white rounded-xl p-6 max-w-md w-full mx-4 shadow-xl">
+        <h3 className="text-lg font-semibold text-dark mb-2">{title}</h3>
+        <p className="text-sm text-[--color-text-secondary] mb-6">{message}</p>
+        <div className="flex justify-end gap-3">
+          <button
+            onClick={onCancel}
+            className="px-4 py-2 text-sm rounded-lg border border-border hover:bg-cream/50"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={onConfirm}
+            className={`px-4 py-2 text-sm rounded-lg font-medium text-white ${
+              confirmVariant === "danger"
+                ? "bg-red-600 hover:bg-red-700"
+                : "bg-vermillion hover:bg-vermillion/90"
+            }`}
+          >
+            {confirmLabel}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+async function adminAction(
+  body: Record<string, unknown>
+): Promise<{ success?: boolean; error?: string }> {
+  const res = await fetch("/api/admin/actions", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+  return res.json();
+}
+
 export default function AdminPage() {
   const [data, setData] = useState<AdminData | null>(null);
   const [error, setError] = useState("");
   const [tab, setTab] = useState<"orgs" | "affiliates">("orgs");
+  const [modal, setModal] = useState<{
+    title: string;
+    message: string;
+    confirmLabel: string;
+    confirmVariant?: "danger" | "primary";
+    onConfirm: () => void;
+  } | null>(null);
+  const [actionLoading, setActionLoading] = useState<string | null>(null);
 
-  useEffect(() => {
+  const fetchData = useCallback(() => {
     fetch("/api/admin")
       .then((r) => {
         if (r.status === 403) throw new Error("Access denied. Admin only.");
@@ -77,12 +140,105 @@ export default function AdminPage() {
       .catch((err) => setError(err.message));
   }, []);
 
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
+
+  // ── Org action handlers ──────────────────────────────────────────
+
+  function handleChangePlan(orgId: string, newPlan: string) {
+    setActionLoading(orgId);
+    adminAction({ action: "change_plan", orgId, plan: newPlan })
+      .then(() => fetchData())
+      .finally(() => setActionLoading(null));
+  }
+
+  function handleSuspend(orgId: string, orgName: string) {
+    setModal({
+      title: "Suspend Organization",
+      message: `Are you sure you want to suspend "${orgName}"? Their chat widget will stop working immediately.`,
+      confirmLabel: "Suspend",
+      confirmVariant: "danger",
+      onConfirm: () => {
+        setModal(null);
+        setActionLoading(orgId);
+        adminAction({ action: "suspend_org", orgId })
+          .then(() => fetchData())
+          .finally(() => setActionLoading(null));
+      },
+    });
+  }
+
+  function handleReactivate(orgId: string) {
+    setActionLoading(orgId);
+    adminAction({ action: "reactivate_org", orgId })
+      .then(() => fetchData())
+      .finally(() => setActionLoading(null));
+  }
+
+  function handleTerminate(orgId: string, orgName: string) {
+    setModal({
+      title: "Terminate Organization",
+      message: `This will permanently delete "${orgName}" and ALL its data (conversations, knowledge base, messages). This cannot be undone.`,
+      confirmLabel: "Delete Permanently",
+      confirmVariant: "danger",
+      onConfirm: () => {
+        setModal(null);
+        setActionLoading(orgId);
+        adminAction({ action: "terminate_org", orgId })
+          .then(() => fetchData())
+          .finally(() => setActionLoading(null));
+      },
+    });
+  }
+
+  function handleResetConversations(orgId: string, orgName: string) {
+    setModal({
+      title: "Reset Conversation Count",
+      message: `Reset the billing period conversation count for "${orgName}" to 0?`,
+      confirmLabel: "Reset",
+      confirmVariant: "primary",
+      onConfirm: () => {
+        setModal(null);
+        setActionLoading(orgId);
+        adminAction({ action: "reset_conversations", orgId })
+          .then(() => fetchData())
+          .finally(() => setActionLoading(null));
+      },
+    });
+  }
+
+  // ── Affiliate action handlers ────────────────────────────────────
+
+  function handleAffiliateStatus(affiliateId: string, newStatus: string) {
+    setActionLoading(affiliateId);
+    adminAction({ action: "update_affiliate", affiliateId, status: newStatus })
+      .then(() => fetchData())
+      .finally(() => setActionLoading(null));
+  }
+
+  function handleAffiliateCommission(affiliateId: string, rate: number) {
+    setActionLoading(affiliateId);
+    adminAction({
+      action: "update_affiliate",
+      affiliateId,
+      commissionRate: rate,
+    })
+      .then(() => fetchData())
+      .finally(() => setActionLoading(null));
+  }
+
+  // ── Render ───────────────────────────────────────────────────────
+
   if (error) {
     return (
       <div className="min-h-screen bg-cream flex items-center justify-center">
         <div className="text-center">
           <p className="text-red-600 text-lg mb-4">{error}</p>
-          <Link href="/dashboard" className="text-sm text-vermillion hover:underline">
+          <Link
+            href="/dashboard"
+            className="text-sm text-vermillion hover:underline"
+          >
             Back to Dashboard
           </Link>
         </div>
@@ -122,8 +278,14 @@ export default function AdminPage() {
       <div className="max-w-7xl mx-auto px-6 py-8">
         {/* Stats */}
         <div className="grid grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
-          <StatCard label="Total Organizations" value={String(data.stats.totalOrgs)} />
-          <StatCard label="Paid Customers" value={String(data.stats.paidOrgs)} />
+          <StatCard
+            label="Total Organizations"
+            value={String(data.stats.totalOrgs)}
+          />
+          <StatCard
+            label="Paid Customers"
+            value={String(data.stats.paidOrgs)}
+          />
           <StatCard
             label="MRR"
             value={`$${data.stats.mrr.toLocaleString()}`}
@@ -132,7 +294,10 @@ export default function AdminPage() {
             label="Total Conversations"
             value={data.stats.totalConversations.toLocaleString()}
           />
-          <StatCard label="Affiliates" value={String(data.stats.totalAffiliates)} />
+          <StatCard
+            label="Affiliates"
+            value={String(data.stats.totalAffiliates)}
+          />
         </div>
 
         {/* Tabs */}
@@ -161,7 +326,7 @@ export default function AdminPage() {
 
         {/* Organizations table */}
         {tab === "orgs" && (
-          <div className="bg-white rounded-xl border border-border overflow-hidden">
+          <div className="bg-white rounded-xl border border-border overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-border bg-cream/50">
@@ -172,22 +337,30 @@ export default function AdminPage() {
                     Plan
                   </th>
                   <th className="text-left px-4 py-3 font-medium text-[--color-text-secondary]">
+                    Status
+                  </th>
+                  <th className="text-left px-4 py-3 font-medium text-[--color-text-secondary]">
                     Conversations
                   </th>
                   <th className="text-left px-4 py-3 font-medium text-[--color-text-secondary]">
                     Stripe
                   </th>
                   <th className="text-left px-4 py-3 font-medium text-[--color-text-secondary]">
-                    Affiliate
+                    Created
                   </th>
                   <th className="text-left px-4 py-3 font-medium text-[--color-text-secondary]">
-                    Created
+                    Actions
                   </th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
                 {data.organizations.map((org) => (
-                  <tr key={org.id} className="hover:bg-cream/30">
+                  <tr
+                    key={org.id}
+                    className={`hover:bg-cream/30 ${
+                      actionLoading === org.id ? "opacity-50" : ""
+                    }`}
+                  >
                     <td className="px-6 py-4">
                       <p className="font-medium text-dark">{org.name}</p>
                       <p className="text-xs text-[--color-text-secondary]">
@@ -195,17 +368,36 @@ export default function AdminPage() {
                       </p>
                     </td>
                     <td className="px-4 py-4">
-                      <span
-                        className={`text-xs font-medium px-2 py-0.5 rounded-full capitalize ${
+                      <select
+                        value={org.plan}
+                        onChange={(e) =>
+                          handleChangePlan(org.id, e.target.value)
+                        }
+                        disabled={actionLoading === org.id}
+                        className={`text-xs font-medium px-2 py-1 rounded-full border-0 cursor-pointer capitalize ${
                           PLAN_BADGE[org.plan] ?? PLAN_BADGE.free
                         }`}
                       >
-                        {org.plan}
+                        {["free", "starter", "pro", "business"].map((p) => (
+                          <option key={p} value={p}>
+                            {p}
+                          </option>
+                        ))}
+                      </select>
+                    </td>
+                    <td className="px-4 py-4">
+                      <span
+                        className={`text-xs font-medium px-2 py-0.5 rounded-full capitalize ${
+                          STATUS_BADGE[org.status] ?? STATUS_BADGE.active
+                        }`}
+                      >
+                        {org.status}
                       </span>
                     </td>
                     <td className="px-4 py-4">
                       <p className="text-dark">
-                        {org.currentPeriodConversations} / {org.conversationLimit.toLocaleString()}
+                        {org.currentPeriodConversations} /{" "}
+                        {org.conversationLimit.toLocaleString()}
                       </p>
                       <p className="text-xs text-[--color-text-secondary]">
                         {org.totalConversations} total
@@ -213,22 +405,54 @@ export default function AdminPage() {
                     </td>
                     <td className="px-4 py-4">
                       {org.stripeCustomerId ? (
-                        <span className="text-xs text-green-600">Connected</span>
-                      ) : (
-                        <span className="text-xs text-[--color-text-secondary]">—</span>
-                      )}
-                    </td>
-                    <td className="px-4 py-4">
-                      {org.affiliateCode ? (
-                        <span className="text-xs font-mono text-vermillion">
-                          {org.affiliateCode}
+                        <span className="text-xs text-green-600">
+                          Connected
                         </span>
                       ) : (
-                        <span className="text-xs text-[--color-text-secondary]">—</span>
+                        <span className="text-xs text-[--color-text-secondary]">
+                          —
+                        </span>
                       )}
                     </td>
                     <td className="px-4 py-4 text-xs text-[--color-text-secondary]">
                       {new Date(org.createdAt).toLocaleDateString()}
+                    </td>
+                    <td className="px-4 py-4">
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        {org.status === "active" ? (
+                          <button
+                            onClick={() => handleSuspend(org.id, org.name)}
+                            disabled={actionLoading === org.id}
+                            className="text-xs px-2 py-1 rounded border border-amber-200 text-amber-700 hover:bg-amber-50 disabled:opacity-40"
+                          >
+                            Suspend
+                          </button>
+                        ) : (
+                          <button
+                            onClick={() => handleReactivate(org.id)}
+                            disabled={actionLoading === org.id}
+                            className="text-xs px-2 py-1 rounded border border-green-200 text-green-700 hover:bg-green-50 disabled:opacity-40"
+                          >
+                            Reactivate
+                          </button>
+                        )}
+                        <button
+                          onClick={() =>
+                            handleResetConversations(org.id, org.name)
+                          }
+                          disabled={actionLoading === org.id}
+                          className="text-xs px-2 py-1 rounded border border-blue-200 text-blue-700 hover:bg-blue-50 disabled:opacity-40"
+                        >
+                          Reset
+                        </button>
+                        <button
+                          onClick={() => handleTerminate(org.id, org.name)}
+                          disabled={actionLoading === org.id}
+                          className="text-xs px-2 py-1 rounded border border-red-200 text-red-600 hover:bg-red-50 disabled:opacity-40"
+                        >
+                          Delete
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -244,7 +468,7 @@ export default function AdminPage() {
 
         {/* Affiliates table */}
         {tab === "affiliates" && (
-          <div className="bg-white rounded-xl border border-border overflow-hidden">
+          <div className="bg-white rounded-xl border border-border overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-border bg-cream/50">
@@ -261,16 +485,24 @@ export default function AdminPage() {
                     Referrals
                   </th>
                   <th className="text-left px-4 py-3 font-medium text-[--color-text-secondary]">
+                    Commission
+                  </th>
+                  <th className="text-left px-4 py-3 font-medium text-[--color-text-secondary]">
                     Earned
                   </th>
                   <th className="text-left px-4 py-3 font-medium text-[--color-text-secondary]">
-                    Applied
+                    Actions
                   </th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
                 {data.affiliates.map((aff) => (
-                  <tr key={aff.id} className="hover:bg-cream/30">
+                  <tr
+                    key={aff.id}
+                    className={`hover:bg-cream/30 ${
+                      actionLoading === aff.id ? "opacity-50" : ""
+                    }`}
+                  >
                     <td className="px-6 py-4">
                       <p className="font-medium text-dark">{aff.name}</p>
                       <p className="text-xs text-[--color-text-secondary]">
@@ -293,9 +525,16 @@ export default function AdminPage() {
                       </span>
                     </td>
                     <td className="px-4 py-4">
-                      <p className="text-dark">{aff.referrals.converted} converted</p>
+                      <p className="text-dark">
+                        {aff.referrals.converted} converted
+                      </p>
                       <p className="text-xs text-[--color-text-secondary]">
                         {aff.referrals.total} total
+                      </p>
+                    </td>
+                    <td className="px-4 py-4">
+                      <p className="text-dark">
+                        {(aff.commissionRate * 100).toFixed(0)}%
                       </p>
                     </td>
                     <td className="px-4 py-4">
@@ -306,8 +545,40 @@ export default function AdminPage() {
                         ${(aff.totalPaid / 100).toFixed(2)} paid
                       </p>
                     </td>
-                    <td className="px-4 py-4 text-xs text-[--color-text-secondary]">
-                      {new Date(aff.createdAt).toLocaleDateString()}
+                    <td className="px-4 py-4">
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <select
+                          value={aff.status}
+                          onChange={(e) =>
+                            handleAffiliateStatus(aff.id, e.target.value)
+                          }
+                          disabled={actionLoading === aff.id}
+                          className="text-xs border border-border rounded px-1.5 py-1 disabled:opacity-40"
+                        >
+                          {["pending", "active", "suspended"].map((s) => (
+                            <option key={s} value={s}>
+                              {s}
+                            </option>
+                          ))}
+                        </select>
+                        <select
+                          value={aff.commissionRate}
+                          onChange={(e) =>
+                            handleAffiliateCommission(
+                              aff.id,
+                              parseFloat(e.target.value)
+                            )
+                          }
+                          disabled={actionLoading === aff.id}
+                          className="text-xs border border-border rounded px-1.5 py-1 disabled:opacity-40"
+                        >
+                          {[0.1, 0.15, 0.2, 0.25, 0.3].map((r) => (
+                            <option key={r} value={r}>
+                              {(r * 100).toFixed(0)}%
+                            </option>
+                          ))}
+                        </select>
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -321,6 +592,18 @@ export default function AdminPage() {
           </div>
         )}
       </div>
+
+      {/* Confirmation Modal */}
+      {modal && (
+        <ConfirmModal
+          title={modal.title}
+          message={modal.message}
+          confirmLabel={modal.confirmLabel}
+          confirmVariant={modal.confirmVariant}
+          onConfirm={modal.onConfirm}
+          onCancel={() => setModal(null)}
+        />
+      )}
     </div>
   );
 }
