@@ -50,8 +50,24 @@ export default function RootLayout({
     }
   }
 
+  // Build the CDN script URL for Clerk JS — loaded directly in <head> so it
+  // auto-initializes before React hydrates (bypasses webpack static replacement).
+  const clerkScriptUrl = clerkDomain
+    ? `https://${clerkDomain}/npm/@clerk/clerk-js@6/dist/clerk.browser.js`
+    : "";
+
   return (
     <html lang="en">
+      <head>
+        {clerkPk && clerkScriptUrl && (
+          <script
+            data-clerk-publishable-key={clerkPk}
+            src={clerkScriptUrl}
+            crossOrigin="anonymous"
+            async
+          />
+        )}
+      </head>
       <body
         className={`${dmSans.variable} ${dmSerifDisplay.variable} ${jetbrainsMono.variable} font-sans antialiased`}
       >

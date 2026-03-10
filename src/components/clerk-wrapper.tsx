@@ -10,11 +10,13 @@ import {
 } from "react";
 
 // ---------------------------------------------------------------------------
-// Clerk loaded entirely from CDN — bypasses the @clerk/nextjs npm package
-// on the client side, which breaks on Vercel because NEXT_PUBLIC_* env vars
-// are statically replaced with "" at build time.
+// Clerk loaded entirely from CDN script in <head> (see layout.tsx).
+// The script has data-clerk-publishable-key which auto-initializes Clerk
+// and sets window.Clerk to the ready instance.
 //
-// Server-side auth (@clerk/nextjs/server in API routes) still works fine.
+// This bypasses @clerk/nextjs npm package on the client, which breaks on
+// Vercel because NEXT_PUBLIC_* env vars are statically replaced with ""
+// at build time.
 // ---------------------------------------------------------------------------
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -79,7 +81,6 @@ function MountedClerkComponent({
         /* ignore unmount errors */
       }
     };
-    // Only re-mount when the clerk instance changes, not on every render
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [clerk]);
 
@@ -131,59 +132,7 @@ export function ClerkUserButton() {
 }
 
 // ---------------------------------------------------------------------------
-// Module-level singleton to survive HMR and re-renders
-// ---------------------------------------------------------------------------
-let clerkLoadPromise: Promise<ClerkInstance> | null = null;
-
-function loadClerkFromCDN(
-  publishableKey: string,
-  clerkDomain: string
-): Promise<ClerkInstance> {
-  if (clerkLoadPromise) return clerkLoadPromise;
-
-  clerkLoadPromise = (async () => {
-    const scriptUrl = `https://${clerkDomain}/npm/@clerk/clerk-js@6/dist/clerk.browser.js`;
-
-    // Load the Clerk JS script from CDN
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    if (!(window as any).__clerkCtor) {
-      await new Promise<void>((resolve, reject) => {
-        const script = document.createElement("script");
-        script.src = scriptUrl;
-        script.async = true;
-        script.crossOrigin = "anonymous";
-        script.onload = () => resolve();
-        script.onerror = () =>
-          reject(new Error("Failed to load Clerk JS from CDN"));
-        document.head.appendChild(script);
-      });
-      // Store the constructor before .load() potentially overwrites window.Clerk
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (window as any).__clerkCtor = (window as any).Clerk;
-    }
-
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const Ctor = (window as any).__clerkCtor;
-    if (!Ctor) throw new Error("Clerk constructor not found");
-
-    // If it's already an initialized instance (e.g. from a previous load)
-    if (typeof Ctor.mountSignIn === "function") return Ctor;
-
-    const instance = new Ctor(publishableKey);
-    await instance.load();
-    return instance;
-  })();
-
-  // Reset on failure so next attempt can retry
-  clerkLoadPromise.catch(() => {
-    clerkLoadPromise = null;
-  });
-
-  return clerkLoadPromise;
-}
-
-// ---------------------------------------------------------------------------
-// Provider — wraps children with Clerk context
+// Provider — polls for window.Clerk (set by CDN script in <head>)
 // ---------------------------------------------------------------------------
 export function ClerkWrapper({
   children,
@@ -199,9 +148,27 @@ export function ClerkWrapper({
   useEffect(() => {
     if (!publishableKey || !clerkDomain) return;
 
-    loadClerkFromCDN(publishableKey, clerkDomain)
-      .then(setClerk)
-      .catch((err) => console.error("Clerk init failed:", err));
+    let cancelled = false;
+
+    // The CDN script in <head> auto-initializes Clerk and sets window.Clerk.
+    // Poll until it's ready (usually <1s).
+    function checkClerk() {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const c = (window as any).Clerk;
+      if (c && typeof c.mountSignIn === "function") {
+        if (!cancelled) setClerk(c);
+        return;
+      }
+      if (!cancelled) {
+        setTimeout(checkClerk, 100);
+      }
+    }
+
+    checkClerk();
+
+    return () => {
+      cancelled = true;
+    };
   }, [publishableKey, clerkDomain]);
 
   return <ClerkCtx.Provider value={clerk}>{children}</ClerkCtx.Provider>;
