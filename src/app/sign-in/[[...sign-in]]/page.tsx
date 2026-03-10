@@ -1,8 +1,8 @@
 "use client";
 
 import Link from "next/link";
+import { SignIn } from "@clerk/nextjs";
 import { ResolvlyLogo } from "@/components/resolvly-logo";
-import { ClerkSignIn } from "@/components/clerk-wrapper";
 
 export default function SignInPage() {
   return (
@@ -26,7 +26,7 @@ export default function SignInPage() {
             </p>
           </div>
           <div className="flex justify-center">
-            <ClerkSignIn />
+            <SignIn />
           </div>
         </div>
       </div>

@@ -1,8 +1,8 @@
 "use client";
 
 import Link from "next/link";
+import { SignUp } from "@clerk/nextjs";
 import { ResolvlyLogo } from "@/components/resolvly-logo";
-import { ClerkSignUp } from "@/components/clerk-wrapper";
 
 export default function SignUpPage() {
   return (
@@ -27,7 +27,7 @@ export default function SignUpPage() {
             </p>
           </div>
           <div className="flex justify-center">
-            <ClerkSignUp />
+            <SignUp />
           </div>
         </div>
       </div>

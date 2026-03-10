@@ -3,8 +3,8 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
+import { useAuth, useClerk, UserButton } from "@clerk/nextjs";
 import { ResolvlyLogo } from "@/components/resolvly-logo";
-import { useClerkAuth, useClerk, ClerkUserButton } from "@/components/clerk-wrapper";
 
 type OrgInfo = {
   name: string;
@@ -60,7 +60,7 @@ const PLAN_COLORS: Record<string, string> = {
 };
 
 function AuthGuard({ children }: { children: React.ReactNode }) {
-  const { isLoaded, isSignedIn } = useClerkAuth();
+  const { isLoaded, isSignedIn } = useAuth();
   const clerk = useClerk();
 
   if (!isLoaded) {
@@ -72,8 +72,7 @@ function AuthGuard({ children }: { children: React.ReactNode }) {
   }
 
   if (!isSignedIn) {
-    // Redirect to sign-in using Clerk's JS SDK
-    clerk?.redirectToSignIn?.();
+    clerk.redirectToSignIn();
     return (
       <div className="min-h-screen bg-cream flex items-center justify-center">
         <div className="animate-pulse text-[--color-text-secondary]">Redirecting...</div>
@@ -156,7 +155,7 @@ export default function DashboardLayout({
 
           {/* Footer */}
           <div className="px-6 py-4 border-t border-border flex items-center gap-3">
-            <ClerkUserButton />
+            <UserButton />
             <Link
               href="/demo"
               className="text-xs text-[--color-text-secondary] hover:text-dark accent-hover"

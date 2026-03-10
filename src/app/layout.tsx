@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { DM_Serif_Display, DM_Sans, JetBrains_Mono } from "next/font/google";
-import Script from "next/script";
 import { ClerkWrapper } from "@/components/clerk-wrapper";
 import "./globals.css";
 
@@ -34,58 +33,12 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  // Sanitize: the Vercel env var may contain multiple keys concatenated
-  // (e.g. pk + secret key on next line). Extract only the pk_* value and
-  // NEVER send the secret key to the client.
-  const rawPk = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY ?? "";
-  const clerkPk = rawPk.split(/[\r\n]/)[0].trim();
-
-  // Derive the Clerk Frontend API domain from the publishable key.
-  let clerkDomain = "";
-  if (clerkPk) {
-    try {
-      const base64 = clerkPk.replace(/^pk_(test|live)_/, "");
-      clerkDomain = Buffer.from(base64, "base64").toString().split("$")[0];
-    } catch {
-      // Invalid key format — ignore
-    }
-  }
-
-  const clerkScriptUrl = clerkDomain
-    ? `https://${clerkDomain}/npm/@clerk/clerk-js@6/dist/clerk.browser.js`
-    : "";
-
   return (
     <html lang="en">
-      <head>
-        {clerkPk && clerkScriptUrl && (
-          <script
-            data-clerk-publishable-key={clerkPk}
-            src={clerkScriptUrl}
-            crossOrigin="anonymous"
-            async
-          />
-        )}
-      </head>
       <body
         className={`${dmSans.variable} ${dmSerifDisplay.variable} ${jetbrainsMono.variable} font-sans antialiased`}
       >
-        {/* beforeInteractive runs BEFORE Next.js framework scripts.
-            Patches script.src and setAttribute to fix broken Clerk URLs
-            from the bundled @clerk/nextjs code (which has "" baked in for
-            the publishable key, producing URLs like "https://npm/..."). */}
-        {clerkDomain && (
-          <Script
-            id="clerk-url-patch"
-            strategy="beforeInteractive"
-            dangerouslySetInnerHTML={{
-              __html: `(function(){var d=${JSON.stringify(clerkDomain)};var r=/^https:\\/\\/\\/?npm\\//;function f(v){return typeof v==='string'&&r.test(v)?v.replace(r,'https://'+d+'/npm/'):v;}var o=Object.getOwnPropertyDescriptor(HTMLScriptElement.prototype,'src');if(o&&o.set){var s=o.set;Object.defineProperty(HTMLScriptElement.prototype,'src',{set:function(v){s.call(this,f(v));},get:o.get,configurable:true});}var sa=HTMLScriptElement.prototype.setAttribute;HTMLScriptElement.prototype.setAttribute=function(n,v){if(n==='src')v=f(v);return sa.call(this,n,v);};})();`,
-            }}
-          />
-        )}
-        <ClerkWrapper publishableKey={clerkPk} clerkDomain={clerkDomain}>
-          {children}
-        </ClerkWrapper>
+        <ClerkWrapper>{children}</ClerkWrapper>
       </body>
     </html>
   );
