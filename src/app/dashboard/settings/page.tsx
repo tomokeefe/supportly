@@ -556,5 +556,5 @@ export default function SettingsPage() {
 
 // ── Helpers ──
 function getWidgetSnippet(slug: string, settings: Settings): string {
-  return `<script src="https://cdn.resolvly.ai/widget.js" data-org="${slug}" data-color="${settings.branding.primaryColor}"></script>`;
+  return `<script src="https://www.resolvly.ai/widget.js" data-org="${slug}" data-color="${settings.branding.primaryColor}"></script>`;
 }

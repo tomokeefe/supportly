@@ -7,7 +7,7 @@
     orgSlug: script?.getAttribute("data-org") || "sunrise-pm",
     primaryColor: script?.getAttribute("data-color") || "#2563eb",
     position: script?.getAttribute("data-position") || "bottom-right",
-    apiUrl: script?.getAttribute("data-api") || window.location.origin,
+    apiUrl: script?.getAttribute("data-api") || "https://www.resolvly.ai",
     greeting:
       script?.getAttribute("data-greeting") ||
       "Hi! How can I help you today?",

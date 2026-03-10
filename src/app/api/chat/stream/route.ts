@@ -24,6 +24,16 @@ import { v4 as uuidv4 } from "uuid";
 
 export const runtime = "nodejs";
 
+const CORS_HEADERS = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
+  "Access-Control-Allow-Headers": "Content-Type",
+};
+
+export async function OPTIONS() {
+  return new Response(null, { status: 204, headers: CORS_HEADERS });
+}
+
 const chatSchema = z.object({
   message: z.string().min(1).max(5000),
   conversationId: z.string().nullable().optional(),

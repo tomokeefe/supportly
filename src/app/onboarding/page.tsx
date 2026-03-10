@@ -644,7 +644,7 @@ function OnboardingWizard() {
                 <button
                   onClick={() => {
                     navigator.clipboard.writeText(
-                      `<script src="https://cdn.resolvly.ai/widget.js" data-org="${orgSlug}" data-color="${widgetColor}"></script>`
+                      `<script src="https://www.resolvly.ai/widget.js" data-org="${orgSlug}" data-color="${widgetColor}"></script>`
                     );
                   }}
                   className="text-xs text-vermillion hover:text-[#C7412A] accent-hover font-medium"
@@ -660,7 +660,7 @@ function OnboardingWizard() {
                   {"\n  "}
                   <span className="text-vermillion">src</span>
                   <span className="text-[#78716C]">=</span>
-                  <span className="text-[#A8A29E]">&quot;https://cdn.resolvly.ai/widget.js&quot;</span>
+                  <span className="text-[#A8A29E]">&quot;https://www.resolvly.ai/widget.js&quot;</span>
                   {"\n  "}
                   <span className="text-vermillion">data-org</span>
                   <span className="text-[#78716C]">=</span>

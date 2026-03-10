@@ -18,6 +18,16 @@ import {
 } from "@/lib/demo-data";
 import { v4 as uuidv4 } from "uuid";
 
+const CORS_HEADERS = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
+  "Access-Control-Allow-Headers": "Content-Type",
+};
+
+export async function OPTIONS() {
+  return new Response(null, { status: 204, headers: CORS_HEADERS });
+}
+
 const chatSchema = z.object({
   message: z.string().min(1).max(5000),
   conversationId: z.string().nullable().optional(),
@@ -216,7 +226,7 @@ export async function POST(req: NextRequest) {
       suggestions: response.suggestions,
       sentiment: response.sentiment,
       language: response.language,
-    });
+    }, { headers: CORS_HEADERS });
   } catch (error) {
     console.error("Chat API error:", error);
     return NextResponse.json(
