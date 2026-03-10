@@ -11,6 +11,8 @@ import { currentUser } from "@clerk/nextjs/server";
 const checkoutSchema = z.object({
   plan: z.enum(["starter", "pro", "business"]),
   orgId: z.string().uuid(),
+  returnTo: z.enum(["onboarding", "dashboard"]).default("dashboard"),
+  vertical: z.string().max(100).optional(),
 });
 
 export async function POST(req: NextRequest) {
@@ -35,7 +37,7 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const { plan, orgId } = parsed.data;
+  const { plan, orgId, returnTo, vertical } = parsed.data;
   const stripePriceId = getStripePriceId(plan as PlanName);
 
   if (!stripePriceId) {
@@ -91,12 +93,26 @@ export async function POST(req: NextRequest) {
     }
   }
 
+  // Build success/cancel URLs based on return context
+  const origin = req.nextUrl.origin;
+  let successUrl: string;
+  let cancelUrl: string;
+
+  if (returnTo === "onboarding") {
+    const verticalParam = vertical ? `&vertical=${encodeURIComponent(vertical)}` : "";
+    successUrl = `${origin}/onboarding?step=3&orgId=${orgId}&plan=${plan}${verticalParam}&checkout=success`;
+    cancelUrl = `${origin}/onboarding?checkout=cancelled`;
+  } else {
+    successUrl = `${origin}/dashboard?checkout=success`;
+    cancelUrl = `${origin}/dashboard/billing?checkout=cancelled`;
+  }
+
   const session = await stripe.checkout.sessions.create({
     customer: customerId,
     line_items: [{ price: stripePriceId, quantity: 1 }],
     mode: "subscription",
-    success_url: `${req.nextUrl.origin}/dashboard?checkout=success`,
-    cancel_url: `${req.nextUrl.origin}/dashboard/billing?checkout=cancelled`,
+    success_url: successUrl,
+    cancel_url: cancelUrl,
     metadata: { orgId, plan },
   });
 

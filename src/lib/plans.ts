@@ -64,6 +64,26 @@ export const PLANS = {
 
 export type PlanName = keyof typeof PLANS;
 
+/** Structured feature gates per plan — used for onboarding + API enforcement */
+export const PLAN_LIMITS = {
+  free: { maxArticles: 10, allowFileUpload: false },
+  starter: { maxArticles: 50, allowFileUpload: true },
+  pro: { maxArticles: 250, allowFileUpload: true },
+  business: { maxArticles: Infinity, allowFileUpload: true },
+} as const;
+
+export type PlanLimits = (typeof PLAN_LIMITS)[PlanName];
+
+/** Returns the minimum plan required to unlock a gated feature */
+export function getMinPlanForFeature(
+  feature: "fileUpload"
+): PlanName {
+  switch (feature) {
+    case "fileUpload":
+      return "starter";
+  }
+}
+
 /** Server-only: resolve Stripe price ID from env vars */
 export function getStripePriceId(plan: PlanName): string | null {
   const map: Record<PlanName, string | undefined> = {

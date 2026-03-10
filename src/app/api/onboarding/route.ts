@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { db } from "@/lib/db";
-import { organizations, knowledgeItems } from "@/lib/db/schema";
+import { organizations } from "@/lib/db/schema";
+import { PLANS, type PlanName } from "@/lib/plans";
 
 const onboardingSchema = z.object({
   business: z.object({
@@ -9,14 +10,7 @@ const onboardingSchema = z.object({
     vertical: z.string().min(1).max(100),
     websiteUrl: z.string().max(500).optional().default(""),
   }),
-  faqs: z
-    .array(
-      z.object({
-        title: z.string().min(1),
-        content: z.string().min(1),
-      })
-    )
-    .default([]),
+  plan: z.enum(["free", "starter", "pro", "business"]).default("free"),
   widgetColor: z
     .string()
     .regex(/^#[0-9a-fA-F]{6}$/)
@@ -40,7 +34,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const { business, faqs, widgetColor } = parsed.data;
+    const { business, plan, widgetColor } = parsed.data;
 
     // Generate slug from business name
     const slugBase = business.name
@@ -50,7 +44,6 @@ export async function POST(req: NextRequest) {
       .slice(0, 60);
     const suffix = Math.random().toString(36).slice(2, 8);
     const slug = `${slugBase}-${suffix}`;
-
     const orgId = crypto.randomUUID();
 
     const orgSettings = {
@@ -60,27 +53,17 @@ export async function POST(req: NextRequest) {
       branding: { primaryColor: widgetColor, position: "bottom-right" },
     };
 
-    // Insert into DB if available
+    // Insert org (KB items are added separately via /api/onboarding/knowledge)
     if (db) {
       await db.insert(organizations).values({
         id: orgId,
         name: business.name,
         slug,
         settings: orgSettings,
+        plan: plan as PlanName,
+        conversationLimit: PLANS[plan as PlanName].conversationLimit,
+        clerkUserId: userId,
       });
-
-      if (faqs.length > 0) {
-        await db.insert(knowledgeItems).values(
-          faqs.map((faq) => ({
-            id: crypto.randomUUID(),
-            orgId,
-            title: faq.title,
-            content: faq.content,
-            category: "general",
-            metadata: {},
-          }))
-        );
-      }
     }
 
     // Store org info in Clerk user metadata (if authenticated)
@@ -112,7 +95,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const { business, widgetColor } = parsed.data;
+    const { business, plan, widgetColor } = parsed.data;
     const slugBase = business.name
       .toLowerCase()
       .replace(/[^a-z0-9]+/g, "-")
@@ -121,6 +104,22 @@ export async function POST(req: NextRequest) {
     const suffix = Math.random().toString(36).slice(2, 8);
     const slug = `${slugBase}-${suffix}`;
     const orgId = crypto.randomUUID();
+
+    if (db) {
+      await db.insert(organizations).values({
+        id: orgId,
+        name: business.name,
+        slug,
+        settings: {
+          confidenceThreshold: 0.75,
+          persona: "friendly and professional",
+          greeting: `Hi! Welcome to ${business.name}. How can I help you today?`,
+          branding: { primaryColor: widgetColor, position: "bottom-right" },
+        },
+        plan: plan as PlanName,
+        conversationLimit: PLANS[plan as PlanName].conversationLimit,
+      });
+    }
 
     return NextResponse.json({ orgSlug: slug, orgId });
   }

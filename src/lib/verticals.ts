@@ -9,6 +9,7 @@ export type VerticalStat = {
 export type VerticalUseCase = {
   question: string;
   context: string;
+  answer?: string; // Customer-facing answer for FAQ pre-population
 };
 
 export type VerticalCapability = {
@@ -90,27 +91,37 @@ export const VERTICALS: Record<string, VerticalData> = {
         question: "How do I pay my rent online?",
         context:
           "Payment method inquiries are the #1 repetitive question for property managers.",
+        answer:
+          "You can pay your rent online through our tenant portal. Log in with your account credentials, click 'Make a Payment', and follow the prompts. We accept bank transfers (ACH) and credit/debit cards. Payments are typically processed within 1-2 business days. If you need help setting up your portal account, please contact our office.",
       },
       {
         question:
           "My kitchen faucet is leaking — how do I submit a maintenance request?",
         context:
           "Maintenance intake can be automated with clear instructions and portal links.",
+        answer:
+          "To submit a maintenance request, log into the tenant portal and click 'Maintenance Request'. Describe the issue, include any photos if possible, and submit. For emergencies like flooding, gas leaks, or no heat, please call our emergency maintenance line immediately. Non-emergency requests are typically addressed within 2-3 business days.",
       },
       {
         question: "When does my lease expire and how do I renew?",
         context:
           "Lease renewal timelines are standard policy that AI handles with high confidence.",
+        answer:
+          "Your lease expiration date is listed on your lease agreement, and we also send renewal notices 60-90 days before expiration. To renew, watch for the renewal offer from our office and sign the updated lease. If you're unsure of your end date or want to discuss renewal terms, feel free to contact us and we'll look up your details.",
       },
       {
         question: "What's the pet deposit and which breeds are allowed?",
         context:
           "Pet policy is among the top 5 questions from prospective and current tenants.",
+        answer:
+          "We require a refundable pet deposit (typically $250-$500 depending on the property) plus a monthly pet rent. Most domestic cats and dogs are welcome, though some properties have breed and weight restrictions. Please contact our office with your specific property address and pet details so we can confirm the policy for your unit.",
       },
       {
         question: "Where do guests park and for how long?",
         context:
           "Parking rules are straightforward knowledge base content with clear answers.",
+        answer:
+          "Guest parking is available in designated visitor spots marked with 'Visitor' signs. Guests may park for up to 48 hours without a permit. For longer stays, please contact the office to arrange a temporary parking pass. Unauthorized vehicles in resident spots may be towed at the owner's expense.",
       },
     ],
 
@@ -186,28 +197,38 @@ export const VERTICALS: Record<string, VerticalData> = {
         question: "Do you handle personal injury cases?",
         context:
           "Practice area matching is the most common intake question — and the easiest to automate.",
+        answer:
+          "Yes, personal injury is one of our primary practice areas. We handle car accidents, slip and falls, workplace injuries, and medical malpractice cases. We offer free initial consultations to evaluate your case. Would you like to schedule a consultation with one of our attorneys?",
       },
       {
         question: "How much does a consultation cost?",
         context:
           "Fee transparency is the #1 factor in whether a lead converts to a consultation booking.",
+        answer:
+          "We offer a free initial consultation for most case types. During this meeting, an attorney will review the details of your situation and explain your options. There is no obligation to proceed. For certain matters, we work on a contingency fee basis, meaning you only pay if we win your case.",
       },
       {
         question:
           "I was in a car accident yesterday — what should I do first?",
         context:
           "Urgent inquiries need immediate response. After-hours AI prevents leads from going to competitors.",
+        answer:
+          "First, make sure you've received any needed medical attention. Then, document everything: take photos of the scene and vehicles, get the other driver's information, and file a police report if you haven't already. Avoid giving recorded statements to insurance companies before speaking with an attorney. We'd recommend scheduling a consultation as soon as possible to protect your rights.",
       },
       {
         question:
           "What documents do I need to bring to my first meeting?",
         context:
           "Pre-appointment preparation questions reduce no-shows and wasted attorney time.",
+        answer:
+          "Please bring any documents related to your case: police reports, medical records and bills, insurance correspondence, photographs, and any contracts or agreements involved. Also bring a valid photo ID. If you don't have all of these, don't worry — bring what you have and we can help you obtain the rest.",
       },
       {
         question: "How long does a divorce case typically take?",
         context:
           "Timeline expectations are standard across similar cases and easy to answer from your knowledge base.",
+        answer:
+          "An uncontested divorce where both parties agree on terms typically takes 3-6 months. Contested divorces involving disputes over custody, property, or support can take 12-18 months or longer. Every situation is unique, so we'd recommend a consultation where an attorney can give you a more specific timeline based on your circumstances.",
       },
     ],
 
@@ -286,28 +307,38 @@ export const VERTICALS: Record<string, VerticalData> = {
         question: "Do you accept Delta Dental insurance?",
         context:
           "Insurance acceptance is the #1 question for new patients — answerable from a simple list.",
+        answer:
+          "We accept most major dental insurance plans. To confirm that your specific plan is accepted, please give us a call or send us a message with your insurance provider name and plan details. We'll verify your coverage before your appointment so there are no surprises.",
       },
       {
         question:
           "I need to reschedule my appointment — what's available next week?",
         context:
           "Scheduling inquiries are high-volume. AI can provide instructions and links to your booking system.",
+        answer:
+          "You can reschedule your appointment through our online booking portal, or by calling our office during business hours. We ask for at least 24 hours' notice for cancellations or reschedules to avoid a cancellation fee. Our portal shows real-time availability so you can pick a time that works best for you.",
       },
       {
         question: "What should I do before my first visit?",
         context:
           "New patient prep instructions are identical every time — forms, documents, arrival time.",
+        answer:
+          "For your first visit, please arrive 15 minutes early to complete paperwork. Bring a valid photo ID, your insurance card (if applicable), and a list of any current medications. You can also fill out new patient forms in advance through our website to save time. If you have recent dental X-rays, please bring those as well.",
       },
       {
         question:
           "How much does a teeth cleaning cost without insurance?",
         context:
           "Self-pay pricing questions are increasingly common and easy to answer from your fee schedule.",
+        answer:
+          "A standard adult cleaning (prophylaxis) typically ranges from $100-$200 without insurance. Deep cleanings and other procedures vary in cost. We offer transparent pricing and can provide a detailed estimate before any treatment. Ask us about our discount program for patients without insurance.",
       },
       {
         question: "Are you open on Saturdays?",
         context:
           "Office hours questions are the simplest to automate and among the most frequently asked.",
+        answer:
+          "Our office hours vary by location. Typically we are open Monday through Friday, with select Saturday hours available. Please check our website or contact us for the specific hours at your nearest location. We're happy to help you find a convenient appointment time.",
       },
     ],
 
@@ -384,26 +415,36 @@ export const VERTICALS: Record<string, VerticalData> = {
         question: "Do you take reservations for Saturday night?",
         context:
           "Reservation questions are the highest-value inquiry — directly tied to revenue.",
+        answer:
+          "Yes, we accept reservations! You can book a table through our website or by calling us during business hours. For weekend evenings, we recommend booking at least 2-3 days in advance as they fill up quickly. Walk-ins are also welcome on a first-come, first-served basis.",
       },
       {
         question: "Do you have gluten-free options?",
         context:
           "Allergen and dietary questions are critical for safety and easily answered from your menu.",
+        answer:
+          "Yes, we offer several gluten-free options on our menu, which are clearly marked. We can also modify many dishes to accommodate gluten-free, dairy-free, vegetarian, and vegan diets. Please inform your server about any allergies when you arrive so our kitchen can take extra precautions.",
       },
       {
         question: "What time do you close on Sundays?",
         context:
           "Hours and location questions are the #1 reason customers call — and the simplest to automate.",
+        answer:
+          "Our hours vary by location and may change for holidays. You can find our current hours on our website or Google listing. We recommend checking before your visit, especially on holidays when we may have modified hours.",
       },
       {
         question: "Do you offer catering for events?",
         context:
           "Catering inquiries are high-value leads that often get lost in the dinner rush.",
+        answer:
+          "Yes, we offer catering for corporate events, private parties, weddings, and special occasions. Our catering menu includes options for groups of all sizes. Please reach out with your event date, expected guest count, and any dietary requirements, and our catering team will put together a custom proposal for you.",
       },
       {
         question: "Is there parking nearby?",
         context:
           "Logistics questions affect whether guests choose your restaurant over an easier option.",
+        answer:
+          "There is street parking available around our location, and a public parking garage within a short walk. We recommend checking our website for specific parking directions and tips for your visit. During peak hours, arriving a few minutes early to find parking is a good idea.",
       },
     ],
 
@@ -480,26 +521,36 @@ export const VERTICALS: Record<string, VerticalData> = {
         question: "Where's my order? It was supposed to arrive yesterday.",
         context:
           "Order tracking is the #1 support question for e-commerce — and the most automatable.",
+        answer:
+          "You can track your order status using the tracking link sent to your email when it shipped. If your order appears delayed, please allow 1-2 extra business days as shipping carriers sometimes experience delays. If you still haven't received it after that window, contact us with your order number and we'll investigate right away.",
       },
       {
         question: "What's your return policy?",
         context:
           "Return policies are standard content that AI handles with near-perfect confidence.",
+        answer:
+          "We offer a 30-day return policy on most items. Products must be unused, in their original packaging, and accompanied by a receipt or order confirmation. To initiate a return, visit our Returns page on the website and follow the instructions to generate a return shipping label. Refunds are processed within 5-7 business days after we receive the item.",
       },
       {
         question: "Does this come in a size medium?",
         context:
           "Product availability questions directly impact conversion — fast answers mean more sales.",
+        answer:
+          "Product availability varies and is shown in real time on each product page. If a size or variant shows as 'Out of Stock', you can sign up for restock notifications by entering your email on the product page. We restock popular items regularly. Feel free to ask about a specific product and we'll check availability for you.",
       },
       {
         question: "How long does shipping take to Canada?",
         context:
           "Shipping timeline questions are high-frequency and easily answered from your policies.",
+        answer:
+          "International shipping to Canada typically takes 7-14 business days depending on your location and the shipping method selected at checkout. Standard shipping is the most economical option, while expedited shipping (5-7 business days) is available for an additional fee. Please note that customs duties and taxes may apply.",
       },
       {
         question: "Can I change the color on my order?",
         context:
           "Order modification requests can be triaged by AI and escalated to your fulfillment team.",
+        answer:
+          "We can modify orders that haven't entered the shipping process yet. Please send us your order number and the change you'd like to make as soon as possible. If your order has already been shipped, we may not be able to modify it, but you can return the item and place a new order with the correct color.",
       },
     ],
 
@@ -577,27 +628,37 @@ export const VERTICALS: Record<string, VerticalData> = {
         question: "Do you service the 94110 zip code?",
         context:
           "Service area is the first qualifying question — instant answers prevent lost leads.",
+        answer:
+          "We service a wide area and can quickly check if your location is covered. Please provide your zip code or address and we'll confirm right away. You can also check our service area map on our website for immediate confirmation.",
       },
       {
         question: "How much does a furnace tune-up cost?",
         context:
           "Pricing estimates are the #1 question after service area — answerable from your rate card.",
+        answer:
+          "A standard furnace tune-up starts at a competitive rate and includes a full inspection, filter check, and cleaning. The exact price depends on your system type and any additional services needed. We'd be happy to provide a detailed quote — just let us know your system type and we can give you an accurate estimate.",
       },
       {
         question:
           "My AC isn't cooling — can someone come out today?",
         context:
           "Urgent service requests need immediate response. AI captures the details for dispatch.",
+        answer:
+          "We understand how uncomfortable that is, especially in warm weather. We offer same-day and next-day service appointments for urgent issues. Please provide your name, address, phone number, and a brief description of the problem, and we'll get a technician scheduled for you as soon as possible.",
       },
       {
         question: "Do you offer financing for a new roof?",
         context:
           "Financing questions come up on big-ticket jobs and are easy to answer from your options.",
+        answer:
+          "Yes, we offer flexible financing options for larger projects. We partner with financing providers to offer affordable monthly payment plans, and many customers qualify for 0% interest for an introductory period. We can discuss financing options during your free estimate appointment.",
       },
       {
         question: "Are you licensed and insured?",
         context:
           "Credentialing questions build trust — answer them instantly with your license numbers and coverage.",
+        answer:
+          "Yes, we are fully licensed, bonded, and insured. Our team includes certified technicians with all required state and local licenses. We carry both general liability and workers' compensation insurance for your protection. We're happy to provide our license numbers and proof of insurance upon request.",
       },
     ],
 
@@ -638,4 +699,32 @@ export function getVerticalSlugs(): string[] {
 
 export function getVerticalBySlug(slug: string): VerticalData | undefined {
   return VERTICALS[slug];
+}
+
+/** Map onboarding display name → VERTICALS slug key */
+const INDUSTRY_TO_SLUG: Record<string, string> = {
+  "Property Management": "property-management",
+  "Legal / Law Firm": "law-firms",
+  "Healthcare / Dental": "healthcare",
+  "Restaurant / Cafe": "restaurants",
+  "E-commerce": "ecommerce",
+  "Auto / Home Services": "home-services",
+};
+
+export function getVerticalSlugByIndustry(industry: string): string | null {
+  return INDUSTRY_TO_SLUG[industry] ?? null;
+}
+
+/** Convert a vertical's use cases into FAQ format for onboarding pre-population */
+export function getVerticalFAQs(
+  slug: string
+): Array<{ title: string; content: string }> {
+  const vertical = VERTICALS[slug];
+  if (!vertical) return [];
+  return vertical.useCases
+    .filter((uc) => uc.answer)
+    .map((uc) => ({
+      title: uc.question,
+      content: uc.answer!,
+    }));
 }
