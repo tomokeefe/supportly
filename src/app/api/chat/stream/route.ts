@@ -61,7 +61,7 @@ export async function POST(req: NextRequest) {
     if (!parsed.success) {
       return new Response(
         JSON.stringify({ error: "Invalid request", details: parsed.error.flatten() }),
-        { status: 400, headers: { "Content-Type": "application/json" } }
+        { status: 400, headers: { "Content-Type": "application/json", ...CORS_HEADERS } }
       );
     }
 
@@ -83,7 +83,7 @@ export async function POST(req: NextRequest) {
       if (!org) {
         return new Response(
           JSON.stringify({ error: "Organization not found" }),
-          { status: 404, headers: { "Content-Type": "application/json" } }
+          { status: 404, headers: { "Content-Type": "application/json", ...CORS_HEADERS } }
         );
       }
 
@@ -108,7 +108,7 @@ export async function POST(req: NextRequest) {
           message:
             "This business has reached their conversation limit. Please try again later.",
         }),
-        { status: 429, headers: { "Content-Type": "application/json" } }
+        { status: 429, headers: { "Content-Type": "application/json", ...CORS_HEADERS } }
       );
     }
 
@@ -313,7 +313,7 @@ export async function POST(req: NextRequest) {
     console.error("Chat stream API error:", error);
     return new Response(
       JSON.stringify({ error: "Internal server error" }),
-      { status: 500, headers: { "Content-Type": "application/json" } }
+      { status: 500, headers: { "Content-Type": "application/json", ...CORS_HEADERS } }
     );
   }
 }

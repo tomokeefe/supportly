@@ -43,7 +43,7 @@ export async function POST(req: NextRequest) {
     if (!parsed.success) {
       return NextResponse.json(
         { error: "Invalid request", details: parsed.error.flatten() },
-        { status: 400 }
+        { status: 400, headers: CORS_HEADERS }
       );
     }
 
@@ -65,7 +65,7 @@ export async function POST(req: NextRequest) {
       if (!org) {
         return NextResponse.json(
           { error: "Organization not found" },
-          { status: 404 }
+          { status: 404, headers: CORS_HEADERS }
         );
       }
 
@@ -95,7 +95,7 @@ export async function POST(req: NextRequest) {
               "This business has reached their conversation limit for this billing period. Please try again later or contact the business directly.",
           },
         },
-        { status: 429 }
+        { status: 429, headers: CORS_HEADERS }
       );
     }
 
@@ -231,7 +231,7 @@ export async function POST(req: NextRequest) {
     console.error("Chat API error:", error);
     return NextResponse.json(
       { error: "Internal server error" },
-      { status: 500 }
+      { status: 500, headers: CORS_HEADERS }
     );
   }
 }
