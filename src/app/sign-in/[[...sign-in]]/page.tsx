@@ -21,7 +21,7 @@ export default function SignInPage() {
             href="/"
             className="heading-editorial text-2xl text-dark tracking-tight"
           >
-            Supportly
+            Resolvly
           </Link>
         </div>
       </nav>
@@ -33,7 +33,7 @@ export default function SignInPage() {
               Welcome back.
             </h1>
             <p className="text-[--color-text-secondary]">
-              Sign in to your Supportly dashboard.
+              Sign in to your Resolvly dashboard.
             </p>
           </div>
           <div className="flex justify-center">

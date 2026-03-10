@@ -80,7 +80,7 @@ export default function DashboardPage() {
               href="/"
               className="heading-editorial text-xl text-dark tracking-tight"
             >
-              Supportly
+              Resolvly
             </Link>
             <span className="text-sm text-[--color-text-secondary]">
               Dashboard

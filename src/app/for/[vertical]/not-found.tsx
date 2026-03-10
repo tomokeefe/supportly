@@ -9,7 +9,7 @@ export default function VerticalNotFound() {
             href="/"
             className="heading-editorial text-2xl text-dark tracking-tight"
           >
-            Supportly
+            Resolvly
           </Link>
         </div>
       </nav>

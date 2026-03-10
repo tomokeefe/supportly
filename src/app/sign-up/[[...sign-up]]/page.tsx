@@ -21,7 +21,7 @@ export default function SignUpPage() {
             href="/"
             className="heading-editorial text-2xl text-dark tracking-tight"
           >
-            Supportly
+            Resolvly
           </Link>
         </div>
       </nav>
@@ -30,7 +30,7 @@ export default function SignUpPage() {
         <div className="w-full max-w-md">
           <div className="text-center mb-8">
             <h1 className="heading-editorial text-dark text-3xl mb-2">
-              Get started with Supportly.
+              Get started with Resolvly.
             </h1>
             <p className="text-[--color-text-secondary]">
               Create your account, then set up your AI agent in under 5

@@ -1,7 +1,7 @@
 # CLAUDE.md — Project Context for Claude Code
 
 ## What is this?
-Supportly is an AI-powered customer support agent for SMBs. It's a SaaS product where businesses install a chat widget on their website, and an AI agent (powered by Claude) handles customer conversations using the business's knowledge base.
+Resolvly is an AI-powered customer support agent for SMBs. It's a SaaS product where businesses install a chat widget on their website, and an AI agent (powered by Claude) handles customer conversations using the business's knowledge base.
 
 ## Business Context
 - Based on failed YC startups Parabolic (W23) and Argovox (S22) that died because LLMs weren't production-ready

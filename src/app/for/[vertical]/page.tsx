@@ -166,7 +166,7 @@ export default async function VerticalPage({ params }: Props) {
           <div className="max-w-xl mb-16">
             <div className="editorial-rule mb-6" />
             <h2 className="heading-editorial text-dark text-3xl md:text-4xl">
-              What Supportly does for {data.industry.toLowerCase()}.
+              What Resolvly does for {data.industry.toLowerCase()}.
             </h2>
           </div>
 

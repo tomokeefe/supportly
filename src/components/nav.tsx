@@ -8,7 +8,7 @@ export function Nav({ isSignedIn = false }: { isSignedIn?: boolean }) {
           href="/"
           className="heading-editorial text-2xl text-dark tracking-tight"
         >
-          Supportly
+          Resolvly
         </Link>
         <div className="hidden md:flex items-center gap-8">
           <a

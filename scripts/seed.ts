@@ -1,5 +1,5 @@
 /**
- * Seed script for Supportly demo data.
+ * Seed script for Resolvly demo data.
  *
  * Usage:
  *   npx tsx scripts/seed.ts

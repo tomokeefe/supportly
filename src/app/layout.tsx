@@ -23,7 +23,7 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Supportly — AI Customer Support for SMBs",
+  title: "Resolvly — AI Customer Support for SMBs",
   description:
     "AI-powered customer support that handles 70%+ of conversations at $0.05 each. Stop missing calls. Start closing tickets.",
 };

@@ -51,9 +51,9 @@ export const VERTICALS: Record<string, VerticalData> = {
   "property-management": {
     slug: "property-management",
     industry: "Property Management",
-    metaTitle: "AI Customer Support for Property Management | Supportly",
+    metaTitle: "AI Customer Support for Property Management | Resolvly",
     metaDescription:
-      "Automate tenant inquiries about rent, maintenance, and leases. Supportly handles 70%+ of property management conversations at $0.05 each.",
+      "Automate tenant inquiries about rent, maintenance, and leases. Resolvly handles 70%+ of property management conversations at $0.05 each.",
 
     headline:
       "Tenants don't wait until office hours.\n{vermillion}Now their questions don't have to, either.",
@@ -145,9 +145,9 @@ export const VERTICALS: Record<string, VerticalData> = {
   "law-firms": {
     slug: "law-firms",
     industry: "Legal / Law Firms",
-    metaTitle: "AI Client Intake & Support for Law Firms | Supportly",
+    metaTitle: "AI Client Intake & Support for Law Firms | Resolvly",
     metaDescription:
-      "Automate client intake, answer common legal service questions, and capture leads 24/7. Supportly handles front-desk inquiries for law firms at a fraction of the cost.",
+      "Automate client intake, answer common legal service questions, and capture leads 24/7. Resolvly handles front-desk inquiries for law firms at a fraction of the cost.",
 
     headline:
       "Potential clients call once.\n{vermillion}If nobody answers, they call someone else.",
@@ -243,9 +243,9 @@ export const VERTICALS: Record<string, VerticalData> = {
     slug: "healthcare",
     industry: "Healthcare / Dental",
     metaTitle:
-      "AI Patient Support for Healthcare & Dental Practices | Supportly",
+      "AI Patient Support for Healthcare & Dental Practices | Resolvly",
     metaDescription:
-      "Automate patient inquiries about appointments, insurance, and office policies. Supportly handles 70%+ of healthcare front-desk questions at $0.05 each.",
+      "Automate patient inquiries about appointments, insurance, and office policies. Resolvly handles 70%+ of healthcare front-desk questions at $0.05 each.",
 
     headline:
       "Your front desk is overwhelmed.\n{vermillion}Your patients just want a straight answer.",
@@ -343,9 +343,9 @@ export const VERTICALS: Record<string, VerticalData> = {
     slug: "restaurants",
     industry: "Restaurants / Cafes",
     metaTitle:
-      "AI Customer Support for Restaurants & Cafes | Supportly",
+      "AI Customer Support for Restaurants & Cafes | Resolvly",
     metaDescription:
-      "Automate reservation inquiries, menu questions, and hours/location info. Supportly handles 70%+ of restaurant customer questions at $0.05 each.",
+      "Automate reservation inquiries, menu questions, and hours/location info. Resolvly handles 70%+ of restaurant customer questions at $0.05 each.",
 
     headline:
       "Customers want to know if you're open.\n{vermillion}Not listen to your voicemail greeting.",
@@ -438,9 +438,9 @@ export const VERTICALS: Record<string, VerticalData> = {
   ecommerce: {
     slug: "ecommerce",
     industry: "E-commerce",
-    metaTitle: "AI Customer Support for E-commerce Stores | Supportly",
+    metaTitle: "AI Customer Support for E-commerce Stores | Resolvly",
     metaDescription:
-      "Automate order tracking, return requests, and product questions. Supportly handles 70%+ of e-commerce support conversations at $0.05 each.",
+      "Automate order tracking, return requests, and product questions. Resolvly handles 70%+ of e-commerce support conversations at $0.05 each.",
 
     headline:
       "Your customers have questions at 2am.\n{vermillion}Your support team clocks out at 5.",
@@ -535,9 +535,9 @@ export const VERTICALS: Record<string, VerticalData> = {
     slug: "home-services",
     industry: "Auto / Home Services",
     metaTitle:
-      "AI Customer Support for Home & Auto Service Businesses | Supportly",
+      "AI Customer Support for Home & Auto Service Businesses | Resolvly",
     metaDescription:
-      "Automate scheduling inquiries, service area questions, and pricing estimates. Supportly handles 70%+ of home service conversations at $0.05 each.",
+      "Automate scheduling inquiries, service area questions, and pricing estimates. Resolvly handles 70%+ of home service conversations at $0.05 each.",
 
     headline:
       "Homeowners need help now.\n{vermillion}Not a callback in 48 hours.",

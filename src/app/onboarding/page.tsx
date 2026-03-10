@@ -82,7 +82,7 @@ export default function OnboardingPage() {
             href="/"
             className="heading-editorial text-2xl text-dark tracking-tight"
           >
-            Supportly
+            Resolvly
           </Link>
         </div>
       </nav>
@@ -326,7 +326,7 @@ export default function OnboardingPage() {
                 <button
                   onClick={() => {
                     navigator.clipboard.writeText(
-                      `<script src="https://cdn.supportly.ai/widget.js" data-org="${orgSlug}" data-color="${widgetColor}"></script>`
+                      `<script src="https://cdn.resolvly.ai/widget.js" data-org="${orgSlug}" data-color="${widgetColor}"></script>`
                     );
                   }}
                   className="text-xs text-vermillion hover:text-[#C7412A] accent-hover font-medium"
@@ -337,7 +337,7 @@ export default function OnboardingPage() {
               <pre className="text-sm font-mono text-[#E7E5E4] leading-relaxed overflow-x-auto">
                 <code>
                   <span className="text-[#78716C]">
-                    &lt;!-- Add Supportly to your site --&gt;
+                    &lt;!-- Add Resolvly to your site --&gt;
                   </span>
                   {"\n"}
                   <span className="text-[#E7E5E4]">&lt;script</span>
@@ -346,7 +346,7 @@ export default function OnboardingPage() {
                   <span className="text-vermillion">src</span>
                   <span className="text-[#78716C]">=</span>
                   <span className="text-[#A8A29E]">
-                    &quot;https://cdn.supportly.ai/widget.js&quot;
+                    &quot;https://cdn.resolvly.ai/widget.js&quot;
                   </span>
                   {"\n"}
                   {"  "}

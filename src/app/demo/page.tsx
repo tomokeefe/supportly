@@ -2,7 +2,7 @@ import Link from "next/link";
 import Script from "next/script";
 
 export const metadata = {
-  title: "Live Demo — Supportly",
+  title: "Live Demo — Resolvly",
 };
 
 export default function DemoPage() {
@@ -12,7 +12,7 @@ export default function DemoPage() {
       <nav className="border-b border-border bg-cream">
         <div className="max-w-7xl mx-auto px-6 lg:px-12 py-5 flex items-center justify-between">
           <Link href="/" className="heading-editorial text-2xl text-dark tracking-tight">
-            Supportly
+            Resolvly
           </Link>
           <div className="flex items-center gap-6">
             <Link href="/dashboard" className="text-sm text-[--color-text-secondary] hover:text-dark accent-hover">
@@ -31,7 +31,7 @@ export default function DemoPage() {
         <div className="mb-8 max-w-xl">
           <div className="editorial-rule mb-6" />
           <h1 className="heading-editorial text-dark text-3xl md:text-4xl mb-4">
-            See Supportly in action.
+            See Resolvly in action.
           </h1>
           <p className="text-[--color-text-secondary] leading-relaxed">
             Below is a simulated property management website with a live AI agent.

@@ -125,14 +125,14 @@ export default async function LandingPage() {
               <div className="bg-dark rounded-lg p-5">
                 <code className="text-sm font-mono text-[#E7E5E4] leading-relaxed block">
                   <span className="text-[#78716C]">
-                    &lt;!-- Add Supportly --&gt;
+                    &lt;!-- Add Resolvly --&gt;
                   </span>
                   {"\n"}
                   <span className="text-[#E7E5E4]">&lt;script </span>
                   <span className="text-vermillion">src</span>
                   <span className="text-[#78716C]">=</span>
                   <span className="text-[#A8A29E]">
-                    &quot;cdn.supportly.ai/w.js&quot;
+                    &quot;cdn.resolvly.ai/w.js&quot;
                   </span>
                   {"\n"}
                   {"  "}
