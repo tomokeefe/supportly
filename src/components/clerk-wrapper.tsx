@@ -23,6 +23,7 @@ export function ClerkWrapper({
   const extra: Record<string, string> = {};
   if (clerkDomain) {
     extra.__internal_clerkJSUrl = `https://${clerkDomain}/npm/@clerk/clerk-js@6/dist/clerk.browser.js`;
+    extra.__internal_clerkUIUrl = `https://${clerkDomain}/npm/@clerk/ui@1/dist/ui.browser.js`;
   }
 
   return (
