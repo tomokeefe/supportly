@@ -33,6 +33,12 @@ export function Nav({ isSignedIn = false }: { isSignedIn?: boolean }) {
           >
             Demo
           </Link>
+          <Link
+            href="/partners"
+            className="text-sm text-[--color-text-secondary] hover:text-dark accent-hover"
+          >
+            Partners
+          </Link>
           {isSignedIn ? (
             <Link
               href="/dashboard"
