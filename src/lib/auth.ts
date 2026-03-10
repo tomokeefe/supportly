@@ -2,6 +2,7 @@ import { cookies } from "next/headers";
 
 export type AuthContext = {
   userId: string;
+  email: string | null;
   orgId: string | null;
   orgSlug: string | null;
 };
@@ -20,6 +21,7 @@ export async function getAuthContext(): Promise<AuthContext | null> {
         };
         return {
           userId,
+          email: user.emailAddresses?.[0]?.emailAddress ?? null,
           orgId: meta.orgId ?? null,
           orgSlug: meta.orgSlug ?? null,
         };
@@ -38,6 +40,7 @@ export async function getAuthContext(): Promise<AuthContext | null> {
     if (orgId) {
       return {
         userId: "cookie-user",
+        email: null,
         orgId,
         orgSlug,
       };

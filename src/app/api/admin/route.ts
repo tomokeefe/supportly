@@ -9,18 +9,20 @@ import {
   referrals,
 } from "@/lib/db/schema";
 
-// Restrict to admin Clerk user IDs
-const ADMIN_USER_IDS = (process.env.ADMIN_USER_IDS || "").split(",").filter(Boolean);
+// Restrict to admin emails (comma-separated in env)
+const ADMIN_EMAILS = (process.env.ADMIN_EMAILS || "").split(",").map(e => e.trim().toLowerCase()).filter(Boolean);
 
-function isAdmin(userId: string): boolean {
-  // Allow cookie-user in dev for testing, otherwise check whitelist
-  if (process.env.NODE_ENV !== "production" && userId === "cookie-user") return true;
-  return ADMIN_USER_IDS.includes(userId);
+function isAdmin(auth: { userId: string; email: string | null }): boolean {
+  // Allow cookie-user in dev for testing
+  if (process.env.NODE_ENV !== "production" && auth.userId === "cookie-user") return true;
+  // Check email whitelist
+  if (auth.email && ADMIN_EMAILS.includes(auth.email.toLowerCase())) return true;
+  return false;
 }
 
 export async function GET() {
   const auth = await getAuthContext();
-  if (!auth || !isAdmin(auth.userId)) {
+  if (!auth || !isAdmin(auth)) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
