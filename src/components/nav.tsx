@@ -1,14 +1,12 @@
 import Link from "next/link";
+import { ResolvlyLogo } from "./resolvly-logo";
 
 export function Nav({ isSignedIn = false }: { isSignedIn?: boolean }) {
   return (
     <nav className="border-b border-border">
       <div className="max-w-7xl mx-auto px-6 lg:px-12 py-5 flex items-center justify-between">
-        <Link
-          href="/"
-          className="heading-editorial text-2xl text-dark tracking-tight"
-        >
-          Resolvly
+        <Link href="/" aria-label="Resolvly home">
+          <ResolvlyLogo />
         </Link>
         <div className="hidden md:flex items-center gap-8">
           <a

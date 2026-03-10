@@ -1,5 +1,6 @@
 import Link from "next/link";
 import Script from "next/script";
+import { ResolvlyLogo } from "@/components/resolvly-logo";
 
 export const metadata = {
   title: "Live Demo — Resolvly",
@@ -11,8 +12,8 @@ export default function DemoPage() {
       {/* Nav */}
       <nav className="border-b border-border bg-cream">
         <div className="max-w-7xl mx-auto px-6 lg:px-12 py-5 flex items-center justify-between">
-          <Link href="/" className="heading-editorial text-2xl text-dark tracking-tight">
-            Resolvly
+          <Link href="/" aria-label="Resolvly home">
+            <ResolvlyLogo />
           </Link>
           <div className="flex items-center gap-6">
             <Link href="/dashboard" className="text-sm text-[--color-text-secondary] hover:text-dark accent-hover">

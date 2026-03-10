@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import dynamic from "next/dynamic";
+import { ResolvlyLogo } from "@/components/resolvly-logo";
 
 const clerkConfigured = !!process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
 
@@ -94,11 +95,8 @@ export default function DashboardLayout({
       <aside className="w-64 border-r border-border bg-white flex flex-col flex-shrink-0">
         {/* Logo */}
         <div className="px-6 py-5 border-b border-border">
-          <Link
-            href="/"
-            className="heading-editorial text-xl text-dark tracking-tight"
-          >
-            Resolvly
+          <Link href="/" aria-label="Resolvly home">
+            <ResolvlyLogo size="sm" />
           </Link>
         </div>
 

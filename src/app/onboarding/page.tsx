@@ -4,6 +4,7 @@ import { useState, useEffect, useRef, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { PLANS, PLAN_LIMITS, getMinPlanForFeature, type PlanName } from "@/lib/plans";
+import { ResolvlyLogo } from "@/components/resolvly-logo";
 import { getVerticalSlugByIndustry, getVerticalFAQs } from "@/lib/verticals";
 import { parseFileToArticles, type ParsedArticle } from "@/lib/file-parsers";
 
@@ -221,8 +222,8 @@ function OnboardingWizard() {
       {/* Nav */}
       <nav className="border-b border-border">
         <div className="max-w-7xl mx-auto px-6 lg:px-12 py-5">
-          <Link href="/" className="heading-editorial text-2xl text-dark tracking-tight">
-            Resolvly
+          <Link href="/" aria-label="Resolvly home">
+            <ResolvlyLogo />
           </Link>
         </div>
       </nav>

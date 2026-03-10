@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import dynamic from "next/dynamic";
+import { ResolvlyLogo } from "@/components/resolvly-logo";
 
 const clerkConfigured = !!process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
 
@@ -17,11 +18,8 @@ export default function SignInPage() {
     <div className="min-h-screen bg-cream flex flex-col">
       <nav className="border-b border-border">
         <div className="max-w-7xl mx-auto px-6 lg:px-12 py-5">
-          <Link
-            href="/"
-            className="heading-editorial text-2xl text-dark tracking-tight"
-          >
-            Resolvly
+          <Link href="/" aria-label="Resolvly home">
+            <ResolvlyLogo />
           </Link>
         </div>
       </nav>
