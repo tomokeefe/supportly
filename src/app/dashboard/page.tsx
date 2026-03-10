@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import {
   VolumeChart,
@@ -197,6 +198,7 @@ function EmptyState() {
 
 // ── Main Dashboard ──
 export default function DashboardPage() {
+  const router = useRouter();
   const [conversations, setConversations] = useState<ConversationSummary[]>([]);
   const [stats, setStats] = useState<Stats | null>(null);
   const [daily, setDaily] = useState<DailyData[]>([]);
@@ -213,6 +215,12 @@ export default function DashboardPage() {
       fetch("/api/stats").then((r) => r.json()),
       fetch("/api/org").then((r) => r.json()),
     ]).then(([convData, statsData, orgData]) => {
+      // If user is signed in but has no org, redirect to onboarding
+      if (orgData.redirect) {
+        router.push(orgData.redirect);
+        return;
+      }
+
       const convs = convData.conversations ?? [];
       setConversations(convs);
       setStats(statsData.summary);
@@ -227,7 +235,7 @@ export default function DashboardPage() {
       setIsEmpty(convs.length === 0 && totalConvs === 0);
       setLoading(false);
     });
-  }, []);
+  }, [router]);
 
   // Loading skeleton
   if (loading) {

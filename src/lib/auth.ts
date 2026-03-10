@@ -1,4 +1,4 @@
-import { auth, currentUser } from "@clerk/nextjs/server";
+import { cookies } from "next/headers";
 
 export type AuthContext = {
   userId: string;
@@ -7,25 +7,44 @@ export type AuthContext = {
 };
 
 export async function getAuthContext(): Promise<AuthContext | null> {
+  // 1. Try Clerk auth first
   try {
+    const { auth, currentUser } = await import("@clerk/nextjs/server");
     const { userId } = await auth();
-    if (!userId) return null;
-
-    const user = await currentUser();
-    if (!user) return null;
-
-    const meta = user.publicMetadata as {
-      orgId?: string;
-      orgSlug?: string;
-    };
-
-    return {
-      userId,
-      orgId: meta.orgId ?? null,
-      orgSlug: meta.orgSlug ?? null,
-    };
+    if (userId) {
+      const user = await currentUser();
+      if (user) {
+        const meta = user.publicMetadata as {
+          orgId?: string;
+          orgSlug?: string;
+        };
+        return {
+          userId,
+          orgId: meta.orgId ?? null,
+          orgSlug: meta.orgSlug ?? null,
+        };
+      }
+    }
   } catch {
-    // Clerk not configured — return null gracefully
-    return null;
+    // Clerk not configured — fall through to cookie auth
   }
+
+  // 2. Fallback: read org from cookie (set during onboarding)
+  try {
+    const cookieStore = await cookies();
+    const orgId = cookieStore.get("resolvly_org_id")?.value ?? null;
+    const orgSlug = cookieStore.get("resolvly_org_slug")?.value ?? null;
+
+    if (orgId) {
+      return {
+        userId: "cookie-user",
+        orgId,
+        orgSlug,
+      };
+    }
+  } catch {
+    // cookies() not available in this context
+  }
+
+  return null;
 }

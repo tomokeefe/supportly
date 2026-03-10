@@ -8,26 +8,30 @@
  * in-memory data from src/lib/demo-data.ts automatically.
  */
 
-import { db } from "../src/lib/db";
-import {
-  organizations,
-  knowledgeItems,
-  conversations,
-  messages,
-  dailyStats,
-} from "../src/lib/db/schema";
-import {
-  demoOrg,
-  demoKnowledge,
-  demoConversations,
-  demoMessages,
-  demoDailyStats,
-} from "../src/lib/demo-data";
+import { config } from "dotenv";
+config({ path: ".env.local" });
 
+// Dynamic imports so DATABASE_URL is set before modules evaluate
 async function seed() {
+  const { db } = await import("../src/lib/db");
+  const {
+    organizations,
+    knowledgeItems,
+    conversations,
+    messages,
+    dailyStats,
+  } = await import("../src/lib/db/schema");
+  const {
+    demoOrg,
+    demoKnowledge,
+    demoConversations,
+    demoMessages,
+    demoDailyStats,
+  } = await import("../src/lib/demo-data");
+
   if (!db) {
     console.log("No DATABASE_URL set. The app will use in-memory demo data.");
-    console.log("To seed a real database, set DATABASE_URL in .env and run again.");
+    console.log("To seed a real database, set DATABASE_URL in .env.local and run again.");
     process.exit(0);
   }
 
