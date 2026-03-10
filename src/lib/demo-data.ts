@@ -14,6 +14,13 @@ export const demoOrg: Organization = {
     greeting: "Hi! Welcome to Sunrise Property Management. How can I help you today?",
     branding: { primaryColor: "#2563eb", position: "bottom-right" },
   },
+  plan: "free",
+  stripeCustomerId: null,
+  stripeSubscriptionId: null,
+  conversationLimit: 50,
+  currentPeriodConversations: 0,
+  currentPeriodStart: null,
+  clerkUserId: null,
   createdAt: new Date("2024-01-01"),
   updatedAt: new Date("2024-01-01"),
 };

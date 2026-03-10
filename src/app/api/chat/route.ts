@@ -1,7 +1,21 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
+import { eq, sql } from "drizzle-orm";
 import { runAgent, searchKnowledge } from "@/lib/ai/agent";
-import { demoKnowledge, demoOrg, getOrgSettings, demoConversations, demoMessages } from "@/lib/demo-data";
+import { db } from "@/lib/db";
+import {
+  organizations,
+  knowledgeItems,
+  conversations,
+  messages,
+  type OrgSettings,
+  type KnowledgeItem,
+} from "@/lib/db/schema";
+import {
+  demoKnowledge,
+  getOrgSettings,
+  demoMessages,
+} from "@/lib/demo-data";
 import { v4 as uuidv4 } from "uuid";
 
 const chatSchema = z.object({
@@ -23,26 +37,87 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const { message, conversationId, channel } = parsed.data;
-    const orgSettings = getOrgSettings();
+    const { message, conversationId, channel, orgSlug } = parsed.data;
 
-    // Find relevant knowledge
-    const relevantKnowledge = searchKnowledge(message, demoKnowledge);
+    // ── Resolve org, knowledge, and settings ──
+    let orgSettings: OrgSettings;
+    let knowledge: KnowledgeItem[] = [];
+    let orgId: string | null = null;
+    let orgConversationLimit = 999999;
+    let orgCurrentConversations = 0;
 
-    // Build conversation history from existing messages
+    if (db) {
+      // Real DB: look up org by slug
+      const org = await db.query.organizations.findFirst({
+        where: eq(organizations.slug, orgSlug),
+      });
+
+      if (!org) {
+        return NextResponse.json(
+          { error: "Organization not found" },
+          { status: 404 }
+        );
+      }
+
+      orgId = org.id;
+      orgSettings = org.settings as OrgSettings;
+      orgConversationLimit = org.conversationLimit;
+      orgCurrentConversations = org.currentPeriodConversations;
+
+      // Load knowledge items for this org
+      knowledge = await db.query.knowledgeItems.findMany({
+        where: eq(knowledgeItems.orgId, org.id),
+      });
+    } else {
+      // Demo fallback
+      orgSettings = getOrgSettings();
+      knowledge = demoKnowledge;
+    }
+
+    // ── Check conversation limit ──
+    if (!conversationId && orgCurrentConversations >= orgConversationLimit) {
+      return NextResponse.json(
+        {
+          error: "Conversation limit reached",
+          message: {
+            role: "system",
+            content:
+              "This business has reached their conversation limit for this billing period. Please try again later or contact the business directly.",
+          },
+        },
+        { status: 429 }
+      );
+    }
+
+    // ── Find relevant knowledge ──
+    const relevantKnowledge = searchKnowledge(message, knowledge);
+
+    // ── Build conversation history ──
     const history: { role: "user" | "assistant"; content: string }[] = [];
     if (conversationId) {
-      const existing = demoMessages.filter(
-        (m) => m.conversationId === conversationId && m.role !== "system"
-      );
-      for (const msg of existing) {
-        if (msg.role === "user" || msg.role === "assistant") {
-          history.push({ role: msg.role, content: msg.content });
+      if (db) {
+        const existingMessages = await db.query.messages.findMany({
+          where: eq(messages.conversationId, conversationId),
+          orderBy: (m, { asc }) => [asc(m.createdAt)],
+        });
+        for (const msg of existingMessages) {
+          if (msg.role === "user" || msg.role === "assistant") {
+            history.push({ role: msg.role, content: msg.content });
+          }
+        }
+      } else {
+        const existing = demoMessages.filter(
+          (m) => m.conversationId === conversationId && m.role !== "system"
+        );
+        for (const msg of existing) {
+          if (msg.role === "user" || msg.role === "assistant") {
+            history.push({ role: msg.role, content: msg.content });
+          }
         }
       }
     }
 
-    // Run agent
+    // ── Run agent ──
     const response = await runAgent({
       message,
       conversationHistory: history,
@@ -51,9 +126,65 @@ export async function POST(req: NextRequest) {
       channel,
     });
 
-    // Generate IDs for new conversation if needed
+    // ── Generate IDs ──
     const convId = conversationId ?? uuidv4();
     const messageId = uuidv4();
+
+    // ── Persist to DB ──
+    if (db && orgId) {
+      if (!conversationId) {
+        // Create new conversation
+        await db.insert(conversations).values({
+          id: convId,
+          orgId,
+          status: response.shouldEscalate ? "escalated" : "active",
+          channel,
+        });
+
+        // Increment conversation counter for this org
+        await db
+          .update(organizations)
+          .set({
+            currentPeriodConversations: sql`${organizations.currentPeriodConversations} + 1`,
+          })
+          .where(eq(organizations.id, orgId));
+      }
+
+      // Save user message
+      await db.insert(messages).values({
+        conversationId: convId,
+        role: "user",
+        content: message,
+      });
+
+      // Save assistant message
+      await db.insert(messages).values({
+        id: messageId,
+        conversationId: convId,
+        role: "assistant",
+        content: response.content,
+        confidence: response.confidence,
+      });
+
+      // If escalated, save system message and update conversation
+      if (response.shouldEscalate) {
+        await db.insert(messages).values({
+          conversationId: convId,
+          role: "system",
+          content:
+            "Conversation escalated to human agent due to low confidence.",
+        });
+        await db
+          .update(conversations)
+          .set({ status: "escalated", updatedAt: new Date() })
+          .where(eq(conversations.id, convId));
+      } else {
+        await db
+          .update(conversations)
+          .set({ updatedAt: new Date() })
+          .where(eq(conversations.id, convId));
+      }
+    }
 
     return NextResponse.json({
       conversationId: convId,

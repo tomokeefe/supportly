@@ -26,7 +26,16 @@ export async function GET() {
     const org = await db.query.organizations.findFirst({
       where: eq(organizations.id, ctx.orgId),
     });
-    if (org) return NextResponse.json({ org });
+    if (org) {
+      return NextResponse.json({
+        org: {
+          ...org,
+          plan: org.plan,
+          conversationLimit: org.conversationLimit,
+          currentPeriodConversations: org.currentPeriodConversations,
+        },
+      });
+    }
   }
 
   // Fallback — return org info from Clerk metadata
@@ -35,6 +44,9 @@ export async function GET() {
       id: ctx.orgId,
       name: (ctx as Record<string, unknown>).orgName ?? "Your Business",
       slug: ctx.orgSlug,
+      plan: "free",
+      conversationLimit: 50,
+      currentPeriodConversations: 0,
     },
   });
 }

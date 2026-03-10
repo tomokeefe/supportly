@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { PLANS, type PlanName } from "@/lib/plans";
 
 const VERTICALS = [
   "Property Management",
@@ -14,7 +15,11 @@ const VERTICALS = [
   "Other",
 ];
 
+const PLAN_KEYS = Object.keys(PLANS) as PlanName[];
+
 type FAQ = { title: string; content: string };
+
+const STEP_LABELS = ["Your business", "Knowledge base", "Choose plan", "Go live"];
 
 export default function OnboardingPage() {
   const router = useRouter();
@@ -30,7 +35,11 @@ export default function OnboardingPage() {
   const [faqs, setFaqs] = useState<FAQ[]>([{ title: "", content: "" }]);
 
   // Step 3
+  const [selectedPlan, setSelectedPlan] = useState("free");
+
+  // Step 4
   const [orgSlug, setOrgSlug] = useState("");
+  const [orgId, setOrgId] = useState("");
   const [widgetColor, setWidgetColor] = useState("#DC4A2E");
 
   function addFaq() {
@@ -48,7 +57,7 @@ export default function OnboardingPage() {
     setFaqs(faqs.filter((_, i) => i !== index));
   }
 
-  async function handleSubmit() {
+  async function createOrg() {
     setLoading(true);
     try {
       const validFaqs = faqs.filter((f) => f.title.trim() && f.content.trim());
@@ -64,13 +73,62 @@ export default function OnboardingPage() {
       const data = await res.json();
       if (data.orgSlug) {
         setOrgSlug(data.orgSlug);
-        setStep(3);
+        setOrgId(data.orgId ?? "");
+        return data;
       }
     } catch (err) {
       console.error("Onboarding error:", err);
     } finally {
       setLoading(false);
     }
+    return null;
+  }
+
+  async function handlePlanSelect(plan: string) {
+    setSelectedPlan(plan);
+    setLoading(true);
+
+    // Create org first
+    const orgData = await createOrg();
+    if (!orgData) {
+      setLoading(false);
+      return;
+    }
+
+    if (plan === "free") {
+      // Free plan — go directly to step 4
+      setStep(4);
+      setLoading(false);
+    } else {
+      // Paid plan — redirect to Stripe checkout
+      try {
+        const res = await fetch("/api/stripe/checkout", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ plan, orgId: orgData.orgId }),
+        });
+        const data = await res.json();
+        if (data.url) {
+          window.location.href = data.url;
+        } else {
+          // Stripe not configured — skip to step 4 anyway
+          setStep(4);
+        }
+      } catch {
+        // Stripe error — go to step 4 on free
+        setStep(4);
+      }
+      setLoading(false);
+    }
+  }
+
+  async function handleContinueToPlans() {
+    setStep(3);
+  }
+
+  async function handleSkipFaqs() {
+    setFaqs([]);
+    setStep(3);
   }
 
   return (
@@ -89,35 +147,34 @@ export default function OnboardingPage() {
 
       <div className="max-w-2xl mx-auto px-6 py-16">
         {/* Step indicator */}
-        <div className="flex items-center gap-8 mb-12">
-          {[1, 2, 3].map((s) => (
-            <div key={s} className="flex items-center gap-3">
-              <span
-                className={`stat-mono text-sm ${
-                  s === step
-                    ? "text-vermillion"
-                    : s < step
-                      ? "text-dark"
+        <div className="flex items-center gap-6 mb-12 flex-wrap">
+          {STEP_LABELS.map((label, i) => {
+            const s = i + 1;
+            return (
+              <div key={s} className="flex items-center gap-2">
+                <span
+                  className={`stat-mono text-sm ${
+                    s === step
+                      ? "text-vermillion"
+                      : s < step
+                        ? "text-dark"
+                        : "text-[--color-text-secondary]"
+                  }`}
+                >
+                  0{s}
+                </span>
+                <span
+                  className={`text-sm ${
+                    s === step
+                      ? "text-dark font-medium"
                       : "text-[--color-text-secondary]"
-                }`}
-              >
-                0{s}
-              </span>
-              <span
-                className={`text-sm ${
-                  s === step
-                    ? "text-dark font-medium"
-                    : "text-[--color-text-secondary]"
-                }`}
-              >
-                {s === 1
-                  ? "Your business"
-                  : s === 2
-                    ? "Knowledge base"
-                    : "Go live"}
-              </span>
-            </div>
-          ))}
+                  }`}
+                >
+                  {label}
+                </span>
+              </div>
+            );
+          })}
         </div>
 
         {/* Step 1: Business Info */}
@@ -133,10 +190,7 @@ export default function OnboardingPage() {
 
             <div className="space-y-6">
               <div>
-                <label
-                  htmlFor="name"
-                  className="block text-sm font-medium text-dark mb-2"
-                >
+                <label htmlFor="name" className="block text-sm font-medium text-dark mb-2">
                   Business name
                 </label>
                 <input
@@ -150,10 +204,7 @@ export default function OnboardingPage() {
               </div>
 
               <div>
-                <label
-                  htmlFor="vertical"
-                  className="block text-sm font-medium text-dark mb-2"
-                >
+                <label htmlFor="vertical" className="block text-sm font-medium text-dark mb-2">
                   Industry
                 </label>
                 <select
@@ -164,22 +215,15 @@ export default function OnboardingPage() {
                 >
                   <option value="">Select your industry</option>
                   {VERTICALS.map((v) => (
-                    <option key={v} value={v}>
-                      {v}
-                    </option>
+                    <option key={v} value={v}>{v}</option>
                   ))}
                 </select>
               </div>
 
               <div>
-                <label
-                  htmlFor="url"
-                  className="block text-sm font-medium text-dark mb-2"
-                >
+                <label htmlFor="url" className="block text-sm font-medium text-dark mb-2">
                   Website URL{" "}
-                  <span className="text-[--color-text-secondary] font-normal">
-                    (optional)
-                  </span>
+                  <span className="text-[--color-text-secondary] font-normal">(optional)</span>
                 </label>
                 <input
                   id="url"
@@ -197,8 +241,7 @@ export default function OnboardingPage() {
               disabled={!businessName.trim() || !vertical}
               className="mt-10 inline-flex items-center gap-2 bg-dark text-cream px-8 py-3.5 rounded-full text-sm font-medium hover:bg-[#2C2622] accent-hover disabled:opacity-40 disabled:cursor-not-allowed"
             >
-              Continue
-              <span aria-hidden="true">&rarr;</span>
+              Continue <span aria-hidden="true">&rarr;</span>
             </button>
           </div>
         )}
@@ -217,14 +260,9 @@ export default function OnboardingPage() {
 
             <div className="space-y-6">
               {faqs.map((faq, i) => (
-                <div
-                  key={i}
-                  className="bg-white border border-border rounded-lg p-5"
-                >
+                <div key={i} className="bg-white border border-border rounded-lg p-5">
                   <div className="flex items-center justify-between mb-3">
-                    <span className="stat-mono text-xs text-vermillion">
-                      FAQ {i + 1}
-                    </span>
+                    <span className="stat-mono text-xs text-vermillion">FAQ {i + 1}</span>
                     {faqs.length > 1 && (
                       <button
                         onClick={() => removeFaq(i)}
@@ -267,19 +305,13 @@ export default function OnboardingPage() {
                 &larr; Back
               </button>
               <button
-                onClick={handleSubmit}
-                disabled={loading}
-                className="inline-flex items-center gap-2 bg-dark text-cream px-8 py-3.5 rounded-full text-sm font-medium hover:bg-[#2C2622] accent-hover disabled:opacity-40"
+                onClick={handleContinueToPlans}
+                className="inline-flex items-center gap-2 bg-dark text-cream px-8 py-3.5 rounded-full text-sm font-medium hover:bg-[#2C2622] accent-hover"
               >
-                {loading ? "Setting up..." : "Create my agent"}
-                {!loading && <span aria-hidden="true">&rarr;</span>}
+                Continue <span aria-hidden="true">&rarr;</span>
               </button>
               <button
-                onClick={() => {
-                  setFaqs([]);
-                  handleSubmit();
-                }}
-                disabled={loading}
+                onClick={handleSkipFaqs}
                 className="text-sm text-[--color-text-secondary] hover:text-dark accent-hover"
               >
                 Skip for now
@@ -288,8 +320,83 @@ export default function OnboardingPage() {
           </div>
         )}
 
-        {/* Step 3: Go Live */}
+        {/* Step 3: Choose Plan */}
         {step === 3 && (
+          <div>
+            <div className="editorial-rule mb-6" />
+            <h1 className="heading-editorial text-dark text-3xl md:text-4xl mb-3">
+              Choose your plan.
+            </h1>
+            <p className="text-[--color-text-secondary] mb-10">
+              Start free and upgrade anytime. All plans include your AI agent, knowledge base, and chat widget.
+            </p>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+              {PLAN_KEYS.map((key) => {
+                const plan = PLANS[key];
+                const isRecommended = "recommended" in plan && plan.recommended;
+                return (
+                  <button
+                    key={key}
+                    onClick={() => setSelectedPlan(key)}
+                    disabled={loading}
+                    className={`text-left p-5 rounded-xl border accent-hover ${
+                      selectedPlan === key
+                        ? "border-vermillion bg-vermillion/5"
+                        : "border-border bg-white hover:border-dark/30"
+                    }`}
+                  >
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="font-semibold text-dark">{plan.name}</span>
+                      {isRecommended && (
+                        <span className="text-xs px-2 py-0.5 rounded-full bg-vermillion/10 text-vermillion font-medium">
+                          Popular
+                        </span>
+                      )}
+                    </div>
+                    <p className="mb-2">
+                      <span className="stat-mono text-xl text-dark">${plan.price}</span>
+                      <span className="text-sm text-[--color-text-secondary]">/mo</span>
+                    </p>
+                    <p className="text-xs text-[--color-text-secondary] mb-3">{plan.limit}</p>
+                    <ul className="space-y-1">
+                      {plan.features.map((f) => (
+                        <li key={f} className="text-xs text-[--color-text-secondary] flex items-center gap-1.5">
+                          <span className="w-1 h-1 bg-vermillion rounded-full flex-shrink-0" />
+                          {f}
+                        </li>
+                      ))}
+                    </ul>
+                  </button>
+                );
+              })}
+            </div>
+
+            <div className="flex items-center gap-4">
+              <button
+                onClick={() => setStep(2)}
+                className="text-sm text-[--color-text-secondary] hover:text-dark accent-hover"
+              >
+                &larr; Back
+              </button>
+              <button
+                onClick={() => handlePlanSelect(selectedPlan)}
+                disabled={loading}
+                className="inline-flex items-center gap-2 bg-vermillion text-white px-8 py-3.5 rounded-full text-sm font-medium hover:bg-[#C7412A] accent-hover disabled:opacity-40"
+              >
+                {loading
+                  ? "Setting up..."
+                  : selectedPlan === "free"
+                    ? "Start for free"
+                    : `Start with ${PLANS[selectedPlan as PlanName]?.name}`}
+                {!loading && <span aria-hidden="true">&rarr;</span>}
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Step 4: Go Live */}
+        {step === 4 && (
           <div>
             <div className="editorial-rule mb-6" />
             <h1 className="heading-editorial text-dark text-3xl md:text-4xl mb-3">

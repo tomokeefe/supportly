@@ -11,6 +11,13 @@ import {
   pgEnum,
 } from "drizzle-orm/pg-core";
 
+export const planEnum = pgEnum("plan", [
+  "free",
+  "starter",
+  "pro",
+  "business",
+]);
+
 export const conversationStatusEnum = pgEnum("conversation_status", [
   "active",
   "escalated",
@@ -43,6 +50,15 @@ export const organizations = pgTable("organizations", {
       greeting: "Hi! How can I help you today?",
       branding: { primaryColor: "#2563eb", position: "bottom-right" },
     }),
+  plan: planEnum("plan").notNull().default("free"),
+  stripeCustomerId: varchar("stripe_customer_id", { length: 255 }),
+  stripeSubscriptionId: varchar("stripe_subscription_id", { length: 255 }),
+  conversationLimit: integer("conversation_limit").notNull().default(50),
+  currentPeriodConversations: integer("current_period_conversations")
+    .notNull()
+    .default(0),
+  currentPeriodStart: timestamp("current_period_start"),
+  clerkUserId: varchar("clerk_user_id", { length: 255 }),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
