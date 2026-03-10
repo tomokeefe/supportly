@@ -10,9 +10,8 @@ import {
 } from "react";
 
 // ---------------------------------------------------------------------------
-// Clerk loaded entirely from CDN script in <head> (see layout.tsx).
-// The script has data-clerk-publishable-key which auto-initializes Clerk
-// and sets window.Clerk to the ready instance.
+// Clerk loaded from CDN script in <head> (see layout.tsx), then manually
+// initialized here with .load() which includes UI components.
 //
 // This bypasses @clerk/nextjs npm package on the client, which breaks on
 // Vercel because NEXT_PUBLIC_* env vars are statically replaced with ""
@@ -132,7 +131,45 @@ export function ClerkUserButton() {
 }
 
 // ---------------------------------------------------------------------------
-// Provider — polls for window.Clerk (set by CDN script in <head>)
+// Module-level singleton to survive re-renders and HMR
+// ---------------------------------------------------------------------------
+let clerkInitPromise: Promise<ClerkInstance> | null = null;
+
+function initClerk(publishableKey: string): Promise<ClerkInstance> {
+  if (clerkInitPromise) return clerkInitPromise;
+
+  clerkInitPromise = (async () => {
+    // Wait for the CDN script (loaded in <head>) to set window.Clerk
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const Ctor = await new Promise<any>((resolve) => {
+      function check() {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const c = (window as any).Clerk;
+        // Before .load(), window.Clerk is the class constructor
+        if (c && typeof c === "function") {
+          resolve(c);
+        } else {
+          setTimeout(check, 50);
+        }
+      }
+      check();
+    });
+
+    const instance = new Ctor(publishableKey);
+    await instance.load();
+    return instance;
+  })();
+
+  // Allow retry on failure
+  clerkInitPromise.catch(() => {
+    clerkInitPromise = null;
+  });
+
+  return clerkInitPromise;
+}
+
+// ---------------------------------------------------------------------------
+// Provider
 // ---------------------------------------------------------------------------
 export function ClerkWrapper({
   children,
@@ -148,27 +185,9 @@ export function ClerkWrapper({
   useEffect(() => {
     if (!publishableKey || !clerkDomain) return;
 
-    let cancelled = false;
-
-    // The CDN script in <head> auto-initializes Clerk and sets window.Clerk.
-    // Poll until it's ready (usually <1s).
-    function checkClerk() {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const c = (window as any).Clerk;
-      if (c && typeof c.mountSignIn === "function") {
-        if (!cancelled) setClerk(c);
-        return;
-      }
-      if (!cancelled) {
-        setTimeout(checkClerk, 100);
-      }
-    }
-
-    checkClerk();
-
-    return () => {
-      cancelled = true;
-    };
+    initClerk(publishableKey)
+      .then(setClerk)
+      .catch((err) => console.error("Clerk init failed:", err));
   }, [publishableKey, clerkDomain]);
 
   return <ClerkCtx.Provider value={clerk}>{children}</ClerkCtx.Provider>;
