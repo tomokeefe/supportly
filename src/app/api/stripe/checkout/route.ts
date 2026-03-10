@@ -1,11 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { eq } from "drizzle-orm";
+import { eq, and } from "drizzle-orm";
 import { stripe } from "@/lib/stripe";
 import { getAuthContext } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { organizations } from "@/lib/db/schema";
-import { PLANS, getStripePriceId, type PlanName } from "@/lib/plans";
+import { getStripePriceId, type PlanName } from "@/lib/plans";
+import { currentUser } from "@clerk/nextjs/server";
 
 const checkoutSchema = z.object({
   plan: z.enum(["starter", "pro", "business"]),
@@ -44,18 +45,40 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  // Get or create Stripe customer
+  // Verify org ownership — org must belong to the authenticated user
   let customerId: string | null = null;
 
   if (db) {
     const org = await db.query.organizations.findFirst({
-      where: eq(organizations.id, orgId),
+      where: and(
+        eq(organizations.id, orgId),
+        eq(organizations.clerkUserId, authCtx.userId)
+      ),
     });
-    customerId = org?.stripeCustomerId ?? null;
+
+    if (!org) {
+      return NextResponse.json(
+        { error: "Organization not found" },
+        { status: 404 }
+      );
+    }
+
+    customerId = org.stripeCustomerId ?? null;
+  }
+
+  // Get user email for Stripe customer
+  let userEmail: string | undefined;
+  try {
+    const user = await currentUser();
+    userEmail =
+      user?.emailAddresses?.[0]?.emailAddress ?? undefined;
+  } catch {
+    // Clerk not available — proceed without email
   }
 
   if (!customerId) {
     const customer = await stripe.customers.create({
+      email: userEmail,
       metadata: { orgId, clerkUserId: authCtx.userId },
     });
     customerId = customer.id;

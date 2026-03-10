@@ -29,6 +29,7 @@ export async function POST(req: NextRequest) {
   }
 
   switch (event.type) {
+    // ── New subscription created via checkout ──
     case "checkout.session.completed": {
       const session = event.data.object;
       const orgId = session.metadata?.orgId;
@@ -53,6 +54,41 @@ export async function POST(req: NextRequest) {
       break;
     }
 
+    // ── Plan changed via Stripe billing portal ──
+    case "customer.subscription.updated": {
+      const subscription = event.data.object;
+      const customerId =
+        typeof subscription.customer === "string"
+          ? subscription.customer
+          : subscription.customer?.toString();
+
+      if (customerId && subscription.items?.data?.[0]?.price?.id) {
+        const priceId = subscription.items.data[0].price.id;
+
+        // Find which plan matches this price ID
+        const matchedPlan = (Object.keys(PLANS) as PlanName[]).find(
+          (key) =>
+            key !== "free" &&
+            process.env[
+              `STRIPE_PRICE_${key.toUpperCase()}` as keyof NodeJS.ProcessEnv
+            ] === priceId
+        );
+
+        if (matchedPlan) {
+          await db
+            .update(organizations)
+            .set({
+              plan: matchedPlan,
+              conversationLimit: PLANS[matchedPlan].conversationLimit,
+              updatedAt: new Date(),
+            })
+            .where(eq(organizations.stripeCustomerId, customerId));
+        }
+      }
+      break;
+    }
+
+    // ── Subscription cancelled ──
     case "customer.subscription.deleted": {
       const subscription = event.data.object;
       const customerId =
@@ -74,8 +110,8 @@ export async function POST(req: NextRequest) {
       break;
     }
 
+    // ── Invoice paid — reset conversation counter for new billing period ──
     case "invoice.paid": {
-      // Reset conversation counter at the start of each billing period
       const invoice = event.data.object;
       const customerId =
         typeof invoice.customer === "string"
@@ -91,6 +127,16 @@ export async function POST(req: NextRequest) {
           })
           .where(eq(organizations.stripeCustomerId, customerId));
       }
+      break;
+    }
+
+    // ── Payment failed — could trigger email/notification in future ──
+    case "invoice.payment_failed": {
+      const invoice = event.data.object;
+      console.warn(
+        `Payment failed for customer ${invoice.customer}, invoice ${invoice.id}`
+      );
+      // Future: send notification email, show banner in dashboard
       break;
     }
   }

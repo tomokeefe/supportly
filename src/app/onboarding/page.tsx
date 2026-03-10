@@ -58,7 +58,6 @@ export default function OnboardingPage() {
   }
 
   async function createOrg() {
-    setLoading(true);
     try {
       const validFaqs = faqs.filter((f) => f.title.trim() && f.content.trim());
       const res = await fetch("/api/onboarding", {
@@ -78,8 +77,6 @@ export default function OnboardingPage() {
       }
     } catch (err) {
       console.error("Onboarding error:", err);
-    } finally {
-      setLoading(false);
     }
     return null;
   }
@@ -88,20 +85,19 @@ export default function OnboardingPage() {
     setSelectedPlan(plan);
     setLoading(true);
 
-    // Create org first
-    const orgData = await createOrg();
-    if (!orgData) {
-      setLoading(false);
-      return;
-    }
+    try {
+      // Create org first
+      const orgData = await createOrg();
+      if (!orgData) {
+        setLoading(false);
+        return;
+      }
 
-    if (plan === "free") {
-      // Free plan — go directly to step 4
-      setStep(4);
-      setLoading(false);
-    } else {
-      // Paid plan — redirect to Stripe checkout
-      try {
+      if (plan === "free") {
+        // Free plan — go directly to step 4
+        setStep(4);
+      } else {
+        // Paid plan — redirect to Stripe checkout
         const res = await fetch("/api/stripe/checkout", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -110,14 +106,21 @@ export default function OnboardingPage() {
         const data = await res.json();
         if (data.url) {
           window.location.href = data.url;
+          return; // Keep loading state while redirecting
         } else {
-          // Stripe not configured — skip to step 4 anyway
+          // Stripe not configured — start on free, show notice
+          alert(
+            "Billing is not configured yet. You've been started on the Free plan — you can upgrade anytime from your dashboard."
+          );
           setStep(4);
         }
-      } catch {
-        // Stripe error — go to step 4 on free
-        setStep(4);
       }
+    } catch {
+      alert(
+        "Something went wrong starting checkout. You've been started on the Free plan — you can upgrade from your dashboard."
+      );
+      setStep(4);
+    } finally {
       setLoading(false);
     }
   }
