@@ -71,7 +71,7 @@ export default function RootLayout({
                 script src assignments and rewrites them to use the correct domain. */}
             <script
               dangerouslySetInnerHTML={{
-                __html: `(function(){var d=${JSON.stringify(clerkDomain)};var o=Object.getOwnPropertyDescriptor(HTMLScriptElement.prototype,'src');if(!o||!o.set)return;var s=o.set;Object.defineProperty(HTMLScriptElement.prototype,'src',{set:function(v){if(typeof v==='string'&&(v.startsWith('https://npm/')||v.startsWith('https:///npm/'))){v=v.replace(/^https:\\/\\/\\/?npm\\//,'https://'+d+'/npm/');}s.call(this,v);},get:o.get,configurable:true});})();`,
+                __html: `(function(){var d=${JSON.stringify(clerkDomain)};var r=/^https:\\/\\/\\/?npm\\//;function f(v){return typeof v==='string'&&r.test(v)?v.replace(r,'https://'+d+'/npm/'):v;}var o=Object.getOwnPropertyDescriptor(HTMLScriptElement.prototype,'src');if(o&&o.set){var s=o.set;Object.defineProperty(HTMLScriptElement.prototype,'src',{set:function(v){s.call(this,f(v));},get:o.get,configurable:true});}var sa=HTMLScriptElement.prototype.setAttribute;HTMLScriptElement.prototype.setAttribute=function(n,v){if(n==='src')v=f(v);return sa.call(this,n,v);};})();`,
               }}
             />
             {clerkPk && (
