@@ -12,6 +12,7 @@ export const demoOrg: Organization = {
     confidenceThreshold: 0.75,
     persona: "friendly, professional property management assistant",
     greeting: "Hi! Welcome to Sunrise Property Management. How can I help you today?",
+    escalationEmail: "support@sunrisepm.com",
     branding: { primaryColor: "#2563eb", position: "bottom-right" },
   },
   plan: "free",

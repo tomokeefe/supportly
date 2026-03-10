@@ -96,7 +96,7 @@ export default function DashboardLayout({
         {/* Logo */}
         <div className="px-6 py-5 border-b border-border">
           <Link href="/" aria-label="Resolvly home">
-            <ResolvlyLogo size="sm" />
+            <ResolvlyLogo size="md" />
           </Link>
         </div>
 

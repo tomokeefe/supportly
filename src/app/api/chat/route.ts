@@ -166,18 +166,34 @@ export async function POST(req: NextRequest) {
         confidence: response.confidence,
       });
 
-      // If escalated, save system message and update conversation
+      // If escalated, save system message, update conversation, and notify
       if (response.shouldEscalate) {
+        const escalationEmail = orgSettings.escalationEmail;
+
         await db.insert(messages).values({
           conversationId: convId,
           role: "system",
-          content:
-            "Conversation escalated to human agent due to low confidence.",
+          content: escalationEmail
+            ? `Conversation escalated to human agent (${escalationEmail}) due to low confidence.`
+            : "Conversation escalated to human agent due to low confidence.",
         });
         await db
           .update(conversations)
           .set({ status: "escalated", updatedAt: new Date() })
           .where(eq(conversations.id, convId));
+
+        // Send escalation email notification (async, non-blocking)
+        if (escalationEmail) {
+          sendEscalationNotification({
+            to: escalationEmail,
+            conversationId: convId,
+            customerMessage: message,
+            aiResponse: response.content,
+            confidence: response.confidence,
+          }).catch((err) =>
+            console.error("Escalation email failed:", err)
+          );
+        }
       } else {
         await db
           .update(conversations)
@@ -205,4 +221,21 @@ export async function POST(req: NextRequest) {
       { status: 500 }
     );
   }
+}
+
+// ── Escalation Email Notification ─────────────────────────────────────
+// Pluggable: replace with Resend, SendGrid, SES, etc.
+async function sendEscalationNotification(params: {
+  to: string;
+  conversationId: string;
+  customerMessage: string;
+  aiResponse: string;
+  confidence: number;
+}) {
+  // TODO: Wire up a real email provider (Resend recommended).
+  // For now, log the escalation so it's visible in server logs.
+  console.log(
+    `[ESCALATION] Notifying ${params.to} — conversation ${params.conversationId} ` +
+      `(confidence: ${params.confidence.toFixed(2)})`
+  );
 }

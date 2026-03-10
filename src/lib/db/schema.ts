@@ -48,6 +48,7 @@ export const organizations = pgTable("organizations", {
       confidenceThreshold: 0.75,
       persona: "friendly and professional",
       greeting: "Hi! How can I help you today?",
+      escalationEmail: "",
       branding: { primaryColor: "#2563eb", position: "bottom-right" },
     }),
   plan: planEnum("plan").notNull().default("free"),
@@ -129,5 +130,6 @@ export type OrgSettings = {
   confidenceThreshold: number;
   persona: string;
   greeting: string;
+  escalationEmail?: string;
   branding: { primaryColor: string; position: string };
 };
