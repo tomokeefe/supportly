@@ -52,15 +52,6 @@ export default function RootLayout({
 
   return (
     <html lang="en">
-      <head>
-        {clerkPk && (
-          <script
-            dangerouslySetInnerHTML={{
-              __html: `window.__CLERK_PK=${JSON.stringify(clerkPk)};window.__CLERK_DOMAIN=${JSON.stringify(clerkDomain)};`,
-            }}
-          />
-        )}
-      </head>
       <body
         className={`${dmSans.variable} ${dmSerifDisplay.variable} ${jetbrainsMono.variable} font-sans antialiased`}
       >

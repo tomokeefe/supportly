@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { ResolvlyLogo } from "@/components/resolvly-logo";
-import { useClerkComponents } from "@/components/clerk-wrapper";
+import { useClerkAuth, useClerk, ClerkUserButton } from "@/components/clerk-wrapper";
 
 type OrgInfo = {
   name: string;
@@ -60,25 +60,8 @@ const PLAN_COLORS: Record<string, string> = {
 };
 
 function AuthGuard({ children }: { children: React.ReactNode }) {
-  const clerk = useClerkComponents();
-  const useAuth = clerk?.useAuth;
-  const RedirectToSignIn = clerk?.RedirectToSignIn;
-
-  // Clerk not loaded yet
-  if (!useAuth) {
-    return (
-      <div className="min-h-screen bg-cream flex items-center justify-center">
-        <div className="animate-pulse text-[--color-text-secondary]">Loading...</div>
-      </div>
-    );
-  }
-
-  return <AuthGuardInner useAuth={useAuth} RedirectToSignIn={RedirectToSignIn}>{children}</AuthGuardInner>;
-}
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function AuthGuardInner({ children, useAuth, RedirectToSignIn }: { children: React.ReactNode; useAuth: any; RedirectToSignIn: any }) {
-  const { isSignedIn, isLoaded } = useAuth();
+  const { isLoaded, isSignedIn } = useClerkAuth();
+  const clerk = useClerk();
 
   if (!isLoaded) {
     return (
@@ -87,9 +70,17 @@ function AuthGuardInner({ children, useAuth, RedirectToSignIn }: { children: Rea
       </div>
     );
   }
+
   if (!isSignedIn) {
-    return <RedirectToSignIn />;
+    // Redirect to sign-in using Clerk's JS SDK
+    clerk?.redirectToSignIn?.();
+    return (
+      <div className="min-h-screen bg-cream flex items-center justify-center">
+        <div className="animate-pulse text-[--color-text-secondary]">Redirecting...</div>
+      </div>
+    );
   }
+
   return <>{children}</>;
 }
 
@@ -100,8 +91,6 @@ export default function DashboardLayout({
 }) {
   const pathname = usePathname();
   const [org, setOrg] = useState<OrgInfo | null>(null);
-  const clerk = useClerkComponents();
-  const UserButton = clerk?.UserButton;
 
   useEffect(() => {
     fetch("/api/org")
@@ -167,7 +156,7 @@ export default function DashboardLayout({
 
           {/* Footer */}
           <div className="px-6 py-4 border-t border-border flex items-center gap-3">
-            {UserButton && <UserButton />}
+            <ClerkUserButton />
             <Link
               href="/demo"
               className="text-xs text-[--color-text-secondary] hover:text-dark accent-hover"
