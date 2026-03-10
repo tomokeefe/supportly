@@ -38,7 +38,9 @@ export default function RootLayout({
       <body
         className={`${dmSans.variable} ${dmSerifDisplay.variable} ${jetbrainsMono.variable} font-sans antialiased`}
       >
-        <ClerkWrapper>{children}</ClerkWrapper>
+        <ClerkWrapper publishableKey={process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY}>
+          {children}
+        </ClerkWrapper>
       </body>
     </html>
   );
