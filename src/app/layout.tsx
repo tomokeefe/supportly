@@ -35,18 +35,28 @@ export default function RootLayout({
 }>) {
   const clerkPk = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY ?? "";
 
+  // Derive the Clerk Frontend API domain from the publishable key.
+  // Clerk constructs script URLs from this domain, but since the env var
+  // isn't inlined into the client bundle at build time on Vercel, the URL
+  // ends up as `https:///npm/...` (missing domain). We derive it server-side
+  // and pass it as a prop so ClerkProvider can use clerkJSUrl directly.
+  let clerkDomain = "";
+  if (clerkPk) {
+    try {
+      const base64 = clerkPk.replace(/^pk_(test|live)_/, "");
+      clerkDomain = Buffer.from(base64, "base64").toString().replace(/\$$/, "");
+    } catch {
+      // Invalid key format — ignore
+    }
+  }
+
   return (
     <html lang="en">
       <head>
-        {/* Inject Clerk publishable key before any JS bundles execute.
-            Clerk reads process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY at
-            module-import time, but the env var may not be inlined into
-            the client bundle on Vercel. This inline script ensures the
-            key is available on window before any modules load. */}
         {clerkPk && (
           <script
             dangerouslySetInnerHTML={{
-              __html: `window.__CLERK_PK=${JSON.stringify(clerkPk)};`,
+              __html: `window.__CLERK_PK=${JSON.stringify(clerkPk)};window.__CLERK_DOMAIN=${JSON.stringify(clerkDomain)};`,
             }}
           />
         )}
@@ -54,7 +64,7 @@ export default function RootLayout({
       <body
         className={`${dmSans.variable} ${dmSerifDisplay.variable} ${jetbrainsMono.variable} font-sans antialiased`}
       >
-        <ClerkWrapper publishableKey={clerkPk}>
+        <ClerkWrapper publishableKey={clerkPk} clerkDomain={clerkDomain}>
           {children}
         </ClerkWrapper>
       </body>
