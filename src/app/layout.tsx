@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { DM_Serif_Display, DM_Sans, JetBrains_Mono } from "next/font/google";
+import Script from "next/script";
 import { ClerkWrapper } from "@/components/clerk-wrapper";
 import "./globals.css";
 
@@ -40,10 +41,6 @@ export default function RootLayout({
   const clerkPk = rawPk.split(/[\r\n]/)[0].trim();
 
   // Derive the Clerk Frontend API domain from the publishable key.
-  // Clerk constructs script URLs from this domain, but since the env var
-  // isn't inlined into the client bundle at build time on Vercel, the URL
-  // ends up as `https:///npm/...` (missing domain). We derive it server-side
-  // and pass it as a prop so ClerkProvider can use clerkJSUrl directly.
   let clerkDomain = "";
   if (clerkPk) {
     try {
@@ -54,8 +51,6 @@ export default function RootLayout({
     }
   }
 
-  // Build the CDN script URL for Clerk JS — loaded directly in <head> so it
-  // auto-initializes before React hydrates (bypasses webpack static replacement).
   const clerkScriptUrl = clerkDomain
     ? `https://${clerkDomain}/npm/@clerk/clerk-js@6/dist/clerk.browser.js`
     : "";
@@ -63,31 +58,31 @@ export default function RootLayout({
   return (
     <html lang="en">
       <head>
-        {clerkDomain && (
-          <>
-            {/* Fix broken Clerk script URLs from the bundled @clerk/nextjs code.
-                The bundled code has "" baked in for the publishable key, producing
-                URLs like "https://npm/..." (missing domain). This patch intercepts
-                script src assignments and rewrites them to use the correct domain. */}
-            <script
-              dangerouslySetInnerHTML={{
-                __html: `(function(){var d=${JSON.stringify(clerkDomain)};var r=/^https:\\/\\/\\/?npm\\//;function f(v){return typeof v==='string'&&r.test(v)?v.replace(r,'https://'+d+'/npm/'):v;}var o=Object.getOwnPropertyDescriptor(HTMLScriptElement.prototype,'src');if(o&&o.set){var s=o.set;Object.defineProperty(HTMLScriptElement.prototype,'src',{set:function(v){s.call(this,f(v));},get:o.get,configurable:true});}var sa=HTMLScriptElement.prototype.setAttribute;HTMLScriptElement.prototype.setAttribute=function(n,v){if(n==='src')v=f(v);return sa.call(this,n,v);};})();`,
-              }}
-            />
-            {clerkPk && (
-              <script
-                data-clerk-publishable-key={clerkPk}
-                src={clerkScriptUrl}
-                crossOrigin="anonymous"
-                async
-              />
-            )}
-          </>
+        {clerkPk && clerkScriptUrl && (
+          <script
+            data-clerk-publishable-key={clerkPk}
+            src={clerkScriptUrl}
+            crossOrigin="anonymous"
+            async
+          />
         )}
       </head>
       <body
         className={`${dmSans.variable} ${dmSerifDisplay.variable} ${jetbrainsMono.variable} font-sans antialiased`}
       >
+        {/* beforeInteractive runs BEFORE Next.js framework scripts.
+            Patches script.src and setAttribute to fix broken Clerk URLs
+            from the bundled @clerk/nextjs code (which has "" baked in for
+            the publishable key, producing URLs like "https://npm/..."). */}
+        {clerkDomain && (
+          <Script
+            id="clerk-url-patch"
+            strategy="beforeInteractive"
+            dangerouslySetInnerHTML={{
+              __html: `(function(){var d=${JSON.stringify(clerkDomain)};var r=/^https:\\/\\/\\/?npm\\//;function f(v){return typeof v==='string'&&r.test(v)?v.replace(r,'https://'+d+'/npm/'):v;}var o=Object.getOwnPropertyDescriptor(HTMLScriptElement.prototype,'src');if(o&&o.set){var s=o.set;Object.defineProperty(HTMLScriptElement.prototype,'src',{set:function(v){s.call(this,f(v));},get:o.get,configurable:true});}var sa=HTMLScriptElement.prototype.setAttribute;HTMLScriptElement.prototype.setAttribute=function(n,v){if(n==='src')v=f(v);return sa.call(this,n,v);};})();`,
+            }}
+          />
+        )}
         <ClerkWrapper publishableKey={clerkPk} clerkDomain={clerkDomain}>
           {children}
         </ClerkWrapper>
