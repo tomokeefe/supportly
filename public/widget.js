@@ -121,6 +121,12 @@
     .resolvly-chip:hover {
       background: ${CONFIG.primaryColor}; color: white;
     }
+    .resolvly-msg strong { font-weight: 600; }
+    .resolvly-msg em { font-style: italic; }
+    .resolvly-msg p { margin: 0 0 8px 0; }
+    .resolvly-msg p:last-child { margin-bottom: 0; }
+    .resolvly-msg ol, .resolvly-msg ul { margin: 4px 0 8px 0; padding-left: 20px; }
+    .resolvly-msg li { margin-bottom: 4px; }
   `;
 
   // ── Inject Styles ────────────────────────────────────────────────
@@ -162,11 +168,52 @@
   var input = document.getElementById("resolvly-input");
   var sendBtn = document.getElementById("resolvly-send");
 
+  // ── Markdown Renderer ────────────────────────────────────────────
+  function renderMarkdown(text) {
+    if (!text) return "";
+    // Escape HTML entities first
+    var html = text
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;");
+    // Bold: **text** or __text__
+    html = html.replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>");
+    html = html.replace(/__(.+?)__/g, "<strong>$1</strong>");
+    // Italic: *text* or _text_ (but not inside bold)
+    html = html.replace(/(?<!\*)\*(?!\*)(.+?)(?<!\*)\*(?!\*)/g, "<em>$1</em>");
+    // Split into paragraphs on double newlines
+    var blocks = html.split(/\n\n+/);
+    var result = [];
+    for (var b = 0; b < blocks.length; b++) {
+      var block = blocks[b].trim();
+      if (!block) continue;
+      // Check if block is a numbered list
+      var listLines = block.split("\n");
+      var isNumberedList = listLines.every(function (l) {
+        return /^\d+[\.\)]\s/.test(l.trim()) || !l.trim();
+      });
+      if (isNumberedList && listLines.length > 1) {
+        var items = listLines
+          .map(function (l) { return l.trim().replace(/^\d+[\.\)]\s*/, ""); })
+          .filter(function (l) { return l; });
+        result.push("<ol>" + items.map(function (li) { return "<li>" + li + "</li>"; }).join("") + "</ol>");
+      } else {
+        // Convert single newlines to <br>
+        result.push("<p>" + block.replace(/\n/g, "<br>") + "</p>");
+      }
+    }
+    return result.join("");
+  }
+
   // ── Helpers ──────────────────────────────────────────────────────
   function addMessage(role, content) {
     var div = document.createElement("div");
     div.className = "resolvly-msg " + role;
-    div.textContent = content;
+    if (role === "assistant" && content) {
+      div.innerHTML = renderMarkdown(content);
+    } else {
+      div.textContent = content;
+    }
     messagesEl.appendChild(div);
     messagesEl.scrollTop = messagesEl.scrollHeight;
     return div;
@@ -283,14 +330,7 @@
       var buffer = "";
       var currentEvent = "";
 
-      while (true) {
-        var result = await reader.read();
-        if (result.done) break;
-
-        buffer += decoder.decode(result.value, { stream: true });
-        var lines = buffer.split("\n");
-        buffer = lines.pop() || "";
-
+      function processSSELines(lines) {
         for (var i = 0; i < lines.length; i++) {
           var line = lines[i].trim();
           if (line.startsWith("event: ")) {
@@ -306,8 +346,8 @@
                 assistantDiv.textContent = streamedText;
                 messagesEl.scrollTop = messagesEl.scrollHeight;
               } else if (currentEvent === "done") {
-                // Replace with clean content (strips metadata tokens)
-                assistantDiv.textContent = data.content || streamedText;
+                // Replace with rendered markdown (strips metadata tokens)
+                assistantDiv.innerHTML = renderMarkdown(data.content || streamedText);
                 if (data.suggestions) {
                   addSuggestions(data.suggestions);
                 }
@@ -330,9 +370,24 @@
         }
       }
 
-      // If no done event was received, ensure content is shown
-      if (!assistantDiv.textContent && streamedText) {
-        assistantDiv.textContent = streamedText;
+      while (true) {
+        var result = await reader.read();
+        if (result.done) break;
+
+        buffer += decoder.decode(result.value, { stream: true });
+        var lines = buffer.split("\n");
+        buffer = lines.pop() || "";
+        processSSELines(lines);
+      }
+
+      // Flush any remaining buffer after stream ends
+      if (buffer.trim()) {
+        processSSELines(buffer.split("\n"));
+      }
+
+      // If done event never rendered markdown, do it now
+      if (streamedText && !assistantDiv.querySelector("p, ol, strong")) {
+        assistantDiv.innerHTML = renderMarkdown(streamedText);
       }
     } catch (err) {
       // Streaming failed — try legacy endpoint
