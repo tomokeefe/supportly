@@ -3,9 +3,9 @@ import Image from "next/image";
 type LogoSize = "sm" | "md" | "lg";
 
 const SIZES: Record<LogoSize, { height: number; width: number }> = {
-  sm: { height: 22, width: 68 },   // footer, dashboard sidebar
-  md: { height: 28, width: 87 },   // nav, auth pages, onboarding
-  lg: { height: 36, width: 112 },  // hero or splash if needed
+  sm: { height: 32, width: 99 },   // footer, dashboard sidebar
+  md: { height: 40, width: 124 },  // nav, auth pages, onboarding
+  lg: { height: 52, width: 161 },  // hero or splash if needed
 };
 
 export function ResolvlyLogo({
