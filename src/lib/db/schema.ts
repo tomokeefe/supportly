@@ -10,6 +10,7 @@ import {
   date,
   pgEnum,
   customType,
+  type AnyPgColumn,
 } from "drizzle-orm/pg-core";
 
 // Custom pgvector type for embeddings
@@ -33,6 +34,9 @@ export const planEnum = pgEnum("plan", [
   "starter",
   "pro",
   "business",
+  "agency_25",
+  "agency_50",
+  "agency_100",
 ]);
 
 export const orgStatusEnum = pgEnum("org_status", ["active", "suspended"]);
@@ -81,6 +85,9 @@ export const organizations = pgTable("organizations", {
   currentPeriodStart: timestamp("current_period_start"),
   clerkUserId: varchar("clerk_user_id", { length: 255 }),
   affiliateCode: varchar("affiliate_code", { length: 50 }),
+  agencyId: uuid("agency_id").references((): AnyPgColumn => organizations.id, {
+    onDelete: "set null",
+  }),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });

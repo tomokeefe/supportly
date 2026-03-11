@@ -42,6 +42,7 @@ export async function GET() {
       stripeCustomerId: organizations.stripeCustomerId,
       status: organizations.status,
       affiliateCode: organizations.affiliateCode,
+      agencyId: organizations.agencyId,
       createdAt: organizations.createdAt,
     })
     .from(organizations)
@@ -94,6 +95,9 @@ export async function GET() {
     starter: 49,
     pro: 149,
     business: 399,
+    agency_25: 199,
+    agency_50: 349,
+    agency_100: 599,
   };
   const mrr = orgs.reduce((s, o) => s + (PLAN_PRICES[o.plan] ?? 0), 0);
 

@@ -1,8 +1,11 @@
 import Link from "next/link";
 import { PLANS, type PlanName } from "@/lib/plans";
 
+const PUBLIC_PLANS = ["free", "starter", "pro", "business"] as const;
+type PublicPlanName = (typeof PUBLIC_PLANS)[number];
+
 const PLAN_META: Record<
-  PlanName,
+  PublicPlanName,
   { description: string; cta: string; href: string }
 > = {
   free: {
@@ -28,7 +31,7 @@ const PLAN_META: Record<
 };
 
 export function PricingSection() {
-  const planKeys = Object.keys(PLANS) as PlanName[];
+  const planKeys = [...PUBLIC_PLANS];
 
   return (
     <section id="pricing" className="bg-cream">

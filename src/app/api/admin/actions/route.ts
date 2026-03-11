@@ -24,7 +24,7 @@ function isAdmin(auth: { userId: string; email: string | null }): boolean {
 const changePlanSchema = z.object({
   action: z.literal("change_plan"),
   orgId: z.string().uuid(),
-  plan: z.enum(["free", "starter", "pro", "business"]),
+  plan: z.enum(["free", "starter", "pro", "business", "agency_25", "agency_50", "agency_100"]),
 });
 
 const terminateOrgSchema = z.object({

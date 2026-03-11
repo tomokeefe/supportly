@@ -23,6 +23,7 @@ export const demoOrg: Organization = {
   currentPeriodStart: null,
   clerkUserId: null,
   affiliateCode: null,
+  agencyId: null,
   status: "active",
   createdAt: new Date("2024-01-01"),
   updatedAt: new Date("2024-01-01"),

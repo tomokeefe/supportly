@@ -540,6 +540,110 @@ export default function PartnersPage() {
         {view === "apply" && <ApplyForm onSuccess={handleLogin} />}
         {view === "login" && <LoginForm onLogin={handleLogin} />}
         {view === "dashboard" && <Dashboard code={code} />}
+
+        {/* Agency Reseller Program */}
+        {view !== "dashboard" && (
+          <div className="mt-20">
+            <div className="text-center mb-10">
+              <div className="inline-block px-3 py-1 rounded-full bg-purple-100 text-purple-700 text-xs font-medium mb-4">
+                For Web Design Agencies
+              </div>
+              <h2 className="heading-editorial text-dark text-2xl md:text-3xl mb-3">
+                Agency Reseller Program
+              </h2>
+              <p className="text-[--color-text-secondary] max-w-lg mx-auto">
+                Buy bulk AI support licenses at wholesale pricing and resell to
+                your clients. Each license includes a fully independent org with
+                its own knowledge base, branding, and widget.
+              </p>
+            </div>
+
+            <div className="grid md:grid-cols-3 gap-6 max-w-4xl mx-auto">
+              {[
+                {
+                  name: "Agency 25",
+                  licenses: 25,
+                  price: 199,
+                  perLicense: "$7.96",
+                },
+                {
+                  name: "Agency 50",
+                  licenses: 50,
+                  price: 349,
+                  perLicense: "$6.98",
+                  popular: true,
+                },
+                {
+                  name: "Agency 100",
+                  licenses: 100,
+                  price: 599,
+                  perLicense: "$5.99",
+                },
+              ].map((tier) => (
+                <div
+                  key={tier.name}
+                  className={`bg-white rounded-xl border p-6 relative ${
+                    tier.popular
+                      ? "border-purple-300 ring-2 ring-purple-100"
+                      : "border-border"
+                  }`}
+                >
+                  {tier.popular && (
+                    <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-purple-600 text-white text-xs font-medium px-3 py-0.5 rounded-full">
+                      Most Popular
+                    </span>
+                  )}
+                  <h3 className="text-lg font-semibold text-dark mb-1">
+                    {tier.name}
+                  </h3>
+                  <p className="text-sm text-[--color-text-secondary] mb-4">
+                    {tier.licenses} client licenses
+                  </p>
+                  <div className="mb-4">
+                    <span className="stat-mono text-3xl text-dark">
+                      ${tier.price}
+                    </span>
+                    <span className="text-sm text-[--color-text-secondary]">
+                      /mo
+                    </span>
+                  </div>
+                  <p className="text-xs text-[--color-text-secondary] mb-4">
+                    {tier.perLicense} per license
+                  </p>
+                  <ul className="text-sm text-[--color-text-secondary] space-y-2 mb-6">
+                    <li className="flex gap-2">
+                      <span className="text-purple-600">&#10003;</span>
+                      300 conversations/mo per client
+                    </li>
+                    <li className="flex gap-2">
+                      <span className="text-purple-600">&#10003;</span>
+                      White-label ready
+                    </li>
+                    <li className="flex gap-2">
+                      <span className="text-purple-600">&#10003;</span>
+                      Agency management dashboard
+                    </li>
+                    <li className="flex gap-2">
+                      <span className="text-purple-600">&#10003;</span>
+                      Priority support
+                    </li>
+                  </ul>
+                  <a
+                    href="mailto:hello@resolvly.ai?subject=Agency%20Program%20-%20{tier.name}"
+                    className="block text-center w-full py-2.5 rounded-full text-sm font-medium bg-purple-600 text-white hover:bg-purple-700"
+                  >
+                    Contact Us
+                  </a>
+                </div>
+              ))}
+            </div>
+
+            <p className="text-center text-xs text-[--color-text-secondary] mt-6">
+              Agency accounts are provisioned by our team. Reach out and
+              we&apos;ll get you set up within 24 hours.
+            </p>
+          </div>
+        )}
       </div>
     </div>
   );

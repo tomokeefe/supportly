@@ -22,6 +22,7 @@ type AdminData = {
     currentPeriodConversations: number;
     stripeCustomerId: string | null;
     affiliateCode: string | null;
+    agencyId: string | null;
     totalConversations: number;
     createdAt: string;
   }[];
@@ -45,6 +46,15 @@ const PLAN_BADGE: Record<string, string> = {
   starter: "bg-blue-100 text-blue-700",
   pro: "bg-vermillion/10 text-vermillion",
   business: "bg-amber-100 text-amber-700",
+  agency_25: "bg-purple-100 text-purple-700",
+  agency_50: "bg-purple-100 text-purple-700",
+  agency_100: "bg-purple-100 text-purple-700",
+};
+
+const AGENCY_LICENSES: Record<string, number> = {
+  agency_25: 25,
+  agency_50: 50,
+  agency_100: 100,
 };
 
 const STATUS_BADGE: Record<string, string> = {
@@ -368,22 +378,34 @@ export default function AdminPage() {
                       </p>
                     </td>
                     <td className="px-4 py-4">
-                      <select
-                        value={org.plan}
-                        onChange={(e) =>
-                          handleChangePlan(org.id, e.target.value)
-                        }
-                        disabled={actionLoading === org.id}
-                        className={`text-xs font-medium px-2 py-1 rounded-full border-0 cursor-pointer capitalize ${
-                          PLAN_BADGE[org.plan] ?? PLAN_BADGE.free
-                        }`}
-                      >
-                        {["free", "starter", "pro", "business"].map((p) => (
-                          <option key={p} value={p}>
-                            {p}
-                          </option>
-                        ))}
-                      </select>
+                      <div>
+                        <select
+                          value={org.plan}
+                          onChange={(e) =>
+                            handleChangePlan(org.id, e.target.value)
+                          }
+                          disabled={actionLoading === org.id}
+                          className={`text-xs font-medium px-2 py-1 rounded-full border-0 cursor-pointer ${
+                            PLAN_BADGE[org.plan] ?? PLAN_BADGE.free
+                          }`}
+                        >
+                          {["free", "starter", "pro", "business", "agency_25", "agency_50", "agency_100"].map((p) => (
+                            <option key={p} value={p}>
+                              {p.startsWith("agency_") ? `Agency ${p.split("_")[1]}` : p}
+                            </option>
+                          ))}
+                        </select>
+                        {AGENCY_LICENSES[org.plan] && (
+                          <p className="text-xs text-purple-600 mt-0.5">
+                            {data!.organizations.filter((o) => o.agencyId === org.id).length}/{AGENCY_LICENSES[org.plan]} licenses
+                          </p>
+                        )}
+                        {org.agencyId && (
+                          <p className="text-xs text-purple-500 mt-0.5">
+                            via Agency
+                          </p>
+                        )}
+                      </div>
                     </td>
                     <td className="px-4 py-4">
                       <span
