@@ -50,21 +50,21 @@ const PLANS = [
     key: "AGENCY_25",
     name: "Resolvly Agency 25",
     description:
-      "25 client licenses, 300 conversations/mo per client, White-label ready, Agency dashboard, Priority support",
+      "25 client licenses, 300 conversations/mo per client, Independent branding per client, Agency dashboard, Priority support",
     price: 19900,
   },
   {
     key: "AGENCY_50",
     name: "Resolvly Agency 50",
     description:
-      "50 client licenses, 300 conversations/mo per client, White-label ready, Agency dashboard, Priority support",
+      "50 client licenses, 300 conversations/mo per client, Independent branding per client, Agency dashboard, Priority support",
     price: 34900,
   },
   {
     key: "AGENCY_100",
     name: "Resolvly Agency 100",
     description:
-      "100 client licenses, 300 conversations/mo per client, White-label ready, Agency dashboard, Dedicated account manager",
+      "100 client licenses, 300 conversations/mo per client, Independent branding per client, Agency dashboard, Dedicated account manager",
     price: 59900,
   },
 ];

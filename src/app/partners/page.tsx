@@ -682,7 +682,7 @@ export default function PartnersPage() {
                     </li>
                     <li className="flex gap-2">
                       <span className="text-vermillion">&#10003;</span>
-                      White-label ready
+                      Independent branding per client
                     </li>
                     <li className="flex gap-2">
                       <span className="text-vermillion">&#10003;</span>

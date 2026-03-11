@@ -69,7 +69,7 @@ export const PLANS = {
     features: [
       "25 client licenses",
       "300 conversations/mo per client",
-      "White-label ready",
+      "Independent branding per client",
       "Agency dashboard",
       "Priority support",
     ],
@@ -83,7 +83,7 @@ export const PLANS = {
     features: [
       "50 client licenses",
       "300 conversations/mo per client",
-      "White-label ready",
+      "Independent branding per client",
       "Agency dashboard",
       "Priority support",
     ],
@@ -97,7 +97,7 @@ export const PLANS = {
     features: [
       "100 client licenses",
       "300 conversations/mo per client",
-      "White-label ready",
+      "Independent branding per client",
       "Agency dashboard",
       "Dedicated account manager",
     ],
