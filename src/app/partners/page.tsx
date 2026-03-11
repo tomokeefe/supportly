@@ -550,11 +550,11 @@ export default function PartnersPage() {
           <Link href="/">
             <ResolvlyLogo size="md" />
           </Link>
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3">
             {tab === "partner" && view === "apply" && (
               <button
                 onClick={() => setView("login")}
-                className="text-sm text-[--color-text-secondary] hover:text-dark"
+                className="text-sm text-[--color-text-secondary] hover:text-dark hidden sm:block"
               >
                 Already a partner? Log in
               </button>
@@ -562,11 +562,17 @@ export default function PartnersPage() {
             {tab === "partner" && view === "login" && (
               <button
                 onClick={() => setView("apply")}
-                className="text-sm text-[--color-text-secondary] hover:text-dark"
+                className="text-sm text-[--color-text-secondary] hover:text-dark hidden sm:block"
               >
                 Apply to become a partner
               </button>
             )}
+            <Link
+              href="/sign-up"
+              className="text-sm font-medium bg-vermillion text-white px-4 py-2 rounded-full hover:bg-[#C7412A] accent-hover"
+            >
+              Sign Up
+            </Link>
           </div>
         </div>
       </header>
