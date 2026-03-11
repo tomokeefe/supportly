@@ -473,8 +473,6 @@ export default function PartnersPage() {
     "loading"
   );
   const [code, setCode] = useState("");
-  const [agencyLoading, setAgencyLoading] = useState<string | null>(null);
-
   useEffect(() => {
     const saved = localStorage.getItem("resolvly_affiliate_code");
     if (saved) {
@@ -484,59 +482,6 @@ export default function PartnersPage() {
       setView("apply");
     }
   }, []);
-
-  async function handleAgencyCheckout(plan: string) {
-    setAgencyLoading(plan);
-    try {
-      // Step 1: Check if user is signed in and has an org
-      const orgRes = await fetch("/api/org");
-      if (!orgRes.ok) {
-        // Not signed in — redirect to sign up with plan context
-        window.location.href = `/sign-up?plan=${plan}`;
-        return;
-      }
-      const orgData = await orgRes.json();
-      const orgId = orgData.org?.id;
-
-      if (!orgId) {
-        window.location.href = `/sign-up?plan=${plan}`;
-        return;
-      }
-
-      // Step 2: Create Stripe checkout session
-      const checkoutRes = await fetch("/api/stripe/checkout", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          plan,
-          orgId,
-          returnTo: "agency",
-        }),
-      });
-
-      if (!checkoutRes.ok) {
-        const errData = await checkoutRes.json().catch(() => null);
-        alert(errData?.error || `Checkout failed (${checkoutRes.status})`);
-        return;
-      }
-
-      const checkoutData = await checkoutRes.json();
-      if (checkoutData.url) {
-        window.location.href = checkoutData.url;
-      } else {
-        alert("No checkout URL returned. Please try again.");
-      }
-    } catch (err) {
-      console.error("Agency checkout error:", err);
-      alert(
-        err instanceof Error
-          ? `Checkout error: ${err.message}`
-          : "Something went wrong. Please try again."
-      );
-    } finally {
-      setAgencyLoading(null);
-    }
-  }
 
   function handleLogin(referralCode: string) {
     localStorage.setItem("resolvly_affiliate_code", referralCode);
@@ -682,13 +627,12 @@ export default function PartnersPage() {
                       Priority support
                     </li>
                   </ul>
-                  <button
-                    onClick={() => handleAgencyCheckout(`agency_${tier.licenses}`)}
-                    disabled={agencyLoading !== null}
-                    className="block text-center w-full py-2.5 rounded-full text-sm font-medium bg-vermillion text-white hover:bg-[#C7412A] disabled:opacity-50 disabled:cursor-not-allowed"
+                  <a
+                    href={`/sign-up?plan=agency_${tier.licenses}`}
+                    className="block text-center w-full py-2.5 rounded-full text-sm font-medium bg-vermillion text-white hover:bg-[#C7412A]"
                   >
-                    {agencyLoading === `agency_${tier.licenses}` ? "Redirecting..." : "Get Started"}
-                  </button>
+                    Get Started
+                  </a>
                 </div>
               ))}
             </div>
