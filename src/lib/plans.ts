@@ -165,5 +165,5 @@ export function getStripePriceId(plan: PlanName): string | null {
     agency_50: process.env.STRIPE_PRICE_AGENCY_50,
     agency_100: process.env.STRIPE_PRICE_AGENCY_100,
   };
-  return map[plan] || null;
+  return map[plan]?.trim() || null;
 }
