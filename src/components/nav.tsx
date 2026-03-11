@@ -8,6 +8,7 @@ export function Nav({ isSignedIn = false }: { isSignedIn?: boolean }) {
         <Link href="/" aria-label="Resolvly home">
           <ResolvlyLogo />
         </Link>
+        {/* Desktop nav */}
         <div className="hidden md:flex items-center gap-8">
           <a
             href="/#how-it-works"
@@ -57,6 +58,33 @@ export function Nav({ isSignedIn = false }: { isSignedIn?: boolean }) {
               <Link
                 href="/sign-up"
                 className="text-sm font-medium bg-vermillion text-white px-5 py-2 rounded-full hover:bg-[#C7412A] accent-hover"
+              >
+                Start Free Trial
+              </Link>
+            </>
+          )}
+        </div>
+
+        {/* Mobile CTA — always visible on small screens */}
+        <div className="flex md:hidden items-center gap-3">
+          {isSignedIn ? (
+            <Link
+              href="/dashboard"
+              className="text-sm font-medium bg-vermillion text-white px-4 py-2 rounded-full hover:bg-[#C7412A] accent-hover"
+            >
+              Dashboard
+            </Link>
+          ) : (
+            <>
+              <Link
+                href="/sign-in"
+                className="text-sm text-[--color-text-secondary] hover:text-dark accent-hover"
+              >
+                Sign In
+              </Link>
+              <Link
+                href="/sign-up"
+                className="text-sm font-medium bg-vermillion text-white px-4 py-2 rounded-full hover:bg-[#C7412A] accent-hover"
               >
                 Start Free Trial
               </Link>
