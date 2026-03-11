@@ -78,46 +78,53 @@ export async function POST(req: NextRequest) {
     // Clerk not available — proceed without email
   }
 
-  if (!customerId) {
-    const customer = await stripe.customers.create({
-      email: userEmail,
-      metadata: { orgId, clerkUserId: authCtx.userId },
-    });
-    customerId = customer.id;
+  try {
+    if (!customerId) {
+      const customer = await stripe.customers.create({
+        email: userEmail,
+        metadata: { orgId, clerkUserId: authCtx.userId },
+      });
+      customerId = customer.id;
 
-    if (db) {
-      await db
-        .update(organizations)
-        .set({ stripeCustomerId: customerId })
-        .where(eq(organizations.id, orgId));
+      if (db) {
+        await db
+          .update(organizations)
+          .set({ stripeCustomerId: customerId })
+          .where(eq(organizations.id, orgId));
+      }
     }
+
+    // Build success/cancel URLs based on return context
+    const origin = req.nextUrl.origin;
+    let successUrl: string;
+    let cancelUrl: string;
+
+    if (returnTo === "onboarding") {
+      const verticalParam = vertical ? `&vertical=${encodeURIComponent(vertical)}` : "";
+      successUrl = `${origin}/onboarding?step=3&orgId=${orgId}&plan=${plan}${verticalParam}&checkout=success`;
+      cancelUrl = `${origin}/onboarding?checkout=cancelled`;
+    } else if (returnTo === "agency") {
+      successUrl = `${origin}/agency?checkout=success`;
+      cancelUrl = `${origin}/partners?checkout=cancelled`;
+    } else {
+      successUrl = `${origin}/dashboard?checkout=success`;
+      cancelUrl = `${origin}/dashboard/billing?checkout=cancelled`;
+    }
+
+    const session = await stripe.checkout.sessions.create({
+      customer: customerId,
+      line_items: [{ price: stripePriceId, quantity: 1 }],
+      mode: "subscription",
+      success_url: successUrl,
+      cancel_url: cancelUrl,
+      metadata: { orgId, plan },
+    });
+
+    return NextResponse.json({ url: session.url });
+  } catch (err) {
+    console.error("Stripe checkout error:", err);
+    const message =
+      err instanceof Error ? err.message : "Stripe checkout failed";
+    return NextResponse.json({ error: message }, { status: 500 });
   }
-
-  // Build success/cancel URLs based on return context
-  const origin = req.nextUrl.origin;
-  let successUrl: string;
-  let cancelUrl: string;
-
-  if (returnTo === "onboarding") {
-    const verticalParam = vertical ? `&vertical=${encodeURIComponent(vertical)}` : "";
-    successUrl = `${origin}/onboarding?step=3&orgId=${orgId}&plan=${plan}${verticalParam}&checkout=success`;
-    cancelUrl = `${origin}/onboarding?checkout=cancelled`;
-  } else if (returnTo === "agency") {
-    successUrl = `${origin}/agency?checkout=success`;
-    cancelUrl = `${origin}/partners?checkout=cancelled`;
-  } else {
-    successUrl = `${origin}/dashboard?checkout=success`;
-    cancelUrl = `${origin}/dashboard/billing?checkout=cancelled`;
-  }
-
-  const session = await stripe.checkout.sessions.create({
-    customer: customerId,
-    line_items: [{ price: stripePriceId, quantity: 1 }],
-    mode: "subscription",
-    success_url: successUrl,
-    cancel_url: cancelUrl,
-    metadata: { orgId, plan },
-  });
-
-  return NextResponse.json({ url: session.url });
 }
