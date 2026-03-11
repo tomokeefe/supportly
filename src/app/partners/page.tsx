@@ -488,8 +488,10 @@ export default function PartnersPage() {
   async function handleAgencyCheckout(plan: string) {
     setAgencyLoading(plan);
     try {
+      // Step 1: Check if user is signed in and has an org
       const orgRes = await fetch("/api/org");
       if (!orgRes.ok) {
+        // Not signed in — redirect to sign up with plan context
         window.location.href = `/sign-up?plan=${plan}`;
         return;
       }
@@ -501,6 +503,7 @@ export default function PartnersPage() {
         return;
       }
 
+      // Step 2: Create Stripe checkout session
       const checkoutRes = await fetch("/api/stripe/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -511,14 +514,25 @@ export default function PartnersPage() {
         }),
       });
 
+      if (!checkoutRes.ok) {
+        const errData = await checkoutRes.json().catch(() => null);
+        alert(errData?.error || `Checkout failed (${checkoutRes.status})`);
+        return;
+      }
+
       const checkoutData = await checkoutRes.json();
       if (checkoutData.url) {
         window.location.href = checkoutData.url;
       } else {
-        alert(checkoutData.error || "Failed to start checkout");
+        alert("No checkout URL returned. Please try again.");
       }
-    } catch {
-      alert("Something went wrong. Please try again.");
+    } catch (err) {
+      console.error("Agency checkout error:", err);
+      alert(
+        err instanceof Error
+          ? `Checkout error: ${err.message}`
+          : "Something went wrong. Please try again."
+      );
     } finally {
       setAgencyLoading(null);
     }
