@@ -9,9 +9,9 @@ import { getStripePriceId, type PlanName } from "@/lib/plans";
 import { currentUser } from "@clerk/nextjs/server";
 
 const checkoutSchema = z.object({
-  plan: z.enum(["starter", "pro", "business"]),
+  plan: z.enum(["starter", "pro", "business", "agency_25", "agency_50", "agency_100"]),
   orgId: z.string().uuid(),
-  returnTo: z.enum(["onboarding", "dashboard"]).default("dashboard"),
+  returnTo: z.enum(["onboarding", "dashboard", "agency"]).default("dashboard"),
   vertical: z.string().max(100).optional(),
 });
 
@@ -102,6 +102,9 @@ export async function POST(req: NextRequest) {
     const verticalParam = vertical ? `&vertical=${encodeURIComponent(vertical)}` : "";
     successUrl = `${origin}/onboarding?step=3&orgId=${orgId}&plan=${plan}${verticalParam}&checkout=success`;
     cancelUrl = `${origin}/onboarding?checkout=cancelled`;
+  } else if (returnTo === "agency") {
+    successUrl = `${origin}/agency?checkout=success`;
+    cancelUrl = `${origin}/partners?checkout=cancelled`;
   } else {
     successUrl = `${origin}/dashboard?checkout=success`;
     cancelUrl = `${origin}/dashboard/billing?checkout=cancelled`;

@@ -473,6 +473,7 @@ export default function PartnersPage() {
     "loading"
   );
   const [code, setCode] = useState("");
+  const [agencyLoading, setAgencyLoading] = useState<string | null>(null);
 
   useEffect(() => {
     const saved = localStorage.getItem("resolvly_affiliate_code");
@@ -483,6 +484,42 @@ export default function PartnersPage() {
       setView("apply");
     }
   }, []);
+
+  async function handleAgencyCheckout(plan: string) {
+    setAgencyLoading(plan);
+    try {
+      // Check if user is signed in and has an org
+      const orgRes = await fetch("/api/org");
+      if (!orgRes.ok) {
+        // Not signed in — redirect to sign up with plan
+        window.location.href = `/sign-up?plan=${plan}`;
+        return;
+      }
+      const orgData = await orgRes.json();
+
+      // Start Stripe checkout
+      const checkoutRes = await fetch("/api/stripe/checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          plan,
+          orgId: orgData.id,
+          returnTo: "agency",
+        }),
+      });
+
+      const checkoutData = await checkoutRes.json();
+      if (checkoutData.url) {
+        window.location.href = checkoutData.url;
+      } else {
+        alert(checkoutData.error || "Failed to start checkout");
+      }
+    } catch {
+      alert("Something went wrong. Please try again.");
+    } finally {
+      setAgencyLoading(null);
+    }
+  }
 
   function handleLogin(referralCode: string) {
     localStorage.setItem("resolvly_affiliate_code", referralCode);
@@ -628,19 +665,20 @@ export default function PartnersPage() {
                       Priority support
                     </li>
                   </ul>
-                  <a
-                    href="mailto:hello@resolvly.ai?subject=Agency%20Program%20-%20{tier.name}"
-                    className="block text-center w-full py-2.5 rounded-full text-sm font-medium bg-purple-600 text-white hover:bg-purple-700"
+                  <button
+                    onClick={() => handleAgencyCheckout(`agency_${tier.licenses}`)}
+                    disabled={agencyLoading !== null}
+                    className="block text-center w-full py-2.5 rounded-full text-sm font-medium bg-purple-600 text-white hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    Contact Us
-                  </a>
+                    {agencyLoading === `agency_${tier.licenses}` ? "Redirecting..." : "Get Started"}
+                  </button>
                 </div>
               ))}
             </div>
 
             <p className="text-center text-xs text-[--color-text-secondary] mt-6">
-              Agency accounts are provisioned by our team. Reach out and
-              we&apos;ll get you set up within 24 hours.
+              Sign up or sign in to purchase an agency plan. Your agency dashboard
+              will be ready immediately after checkout.
             </p>
           </div>
         )}

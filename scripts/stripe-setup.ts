@@ -46,6 +46,27 @@ const PLANS = [
       "10,000 conversations/mo, All channels + voice, API access, SLA guarantee, Dedicated account manager",
     price: 39900,
   },
+  {
+    key: "AGENCY_25",
+    name: "Resolvly Agency 25",
+    description:
+      "25 client licenses, 300 conversations/mo per client, White-label ready, Agency dashboard, Priority support",
+    price: 19900,
+  },
+  {
+    key: "AGENCY_50",
+    name: "Resolvly Agency 50",
+    description:
+      "50 client licenses, 300 conversations/mo per client, White-label ready, Agency dashboard, Priority support",
+    price: 34900,
+  },
+  {
+    key: "AGENCY_100",
+    name: "Resolvly Agency 100",
+    description:
+      "100 client licenses, 300 conversations/mo per client, White-label ready, Agency dashboard, Dedicated account manager",
+    price: 59900,
+  },
 ];
 
 async function setup() {
@@ -63,37 +84,28 @@ async function setup() {
     for (const p of resolvlyProducts) {
       console.log(`    - ${p.name} (${p.id})`);
     }
-
-    // Find and display existing price IDs
-    const envVars: Record<string, string> = {};
-    for (const plan of PLANS) {
-      const product = resolvlyProducts.find((p) => p.name === plan.name);
-      if (product) {
-        const prices = await stripe.prices.list({
-          product: product.id,
-          active: true,
-          limit: 1,
-        });
-        if (prices.data[0]) {
-          envVars[`STRIPE_PRICE_${plan.key}`] = prices.data[0].id;
-        }
-      }
-    }
-
-    if (Object.keys(envVars).length > 0) {
-      printEnvVars(envVars);
-    } else {
-      console.log(
-        "\n  No active prices found. Archive existing products in Stripe Dashboard to start fresh.\n"
-      );
-    }
-    return;
   }
 
-  // Create products and prices
+  // Find existing prices and create missing products
   const envVars: Record<string, string> = {};
 
   for (const plan of PLANS) {
+    const existingProduct = resolvlyProducts.find((p) => p.name === plan.name);
+
+    if (existingProduct) {
+      const prices = await stripe.prices.list({
+        product: existingProduct.id,
+        active: true,
+        limit: 1,
+      });
+      if (prices.data[0]) {
+        envVars[`STRIPE_PRICE_${plan.key}`] = prices.data[0].id;
+        console.log(`  ✓ ${plan.name} already exists (${prices.data[0].id})`);
+        continue;
+      }
+    }
+
+    // Create new product + price
     console.log(`  Creating ${plan.name}...`);
 
     const product = await stripe.products.create({
