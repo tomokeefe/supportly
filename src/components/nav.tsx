@@ -1,14 +1,29 @@
 "use client";
 
 import { useState } from "react";
+import { usePathname } from "next/navigation";
 import Link from "next/link";
 import { ResolvlyLogo } from "./resolvly-logo";
 
+const NAV_LINKS = [
+  { href: "/#how-it-works", label: "How It Works" },
+  { href: "/#industries", label: "Industries" },
+  { href: "/#pricing", label: "Pricing" },
+  { href: "/demo", label: "Demo" },
+  { href: "/partners", label: "Partners" },
+];
+
 export function Nav({ isSignedIn = false }: { isSignedIn?: boolean }) {
   const [open, setOpen] = useState(false);
+  const pathname = usePathname();
+
+  function isActive(href: string) {
+    if (href.startsWith("/#")) return false;
+    return pathname === href || pathname.startsWith(href + "/");
+  }
 
   return (
-    <nav className="border-b border-border relative">
+    <nav className="border-b border-border bg-white sticky top-0 z-40">
       <div className="max-w-7xl mx-auto px-6 lg:px-12 py-5 flex items-center justify-between">
         <Link href="/" aria-label="Resolvly home">
           <ResolvlyLogo />
@@ -16,36 +31,29 @@ export function Nav({ isSignedIn = false }: { isSignedIn?: boolean }) {
 
         {/* Desktop nav */}
         <div className="hidden md:flex items-center gap-8">
-          <a
-            href="/#how-it-works"
-            className="text-sm text-[--color-text-secondary] hover:text-dark accent-hover"
-          >
-            How It Works
-          </a>
-          <a
-            href="/#industries"
-            className="text-sm text-[--color-text-secondary] hover:text-dark accent-hover"
-          >
-            Industries
-          </a>
-          <a
-            href="/#pricing"
-            className="text-sm text-[--color-text-secondary] hover:text-dark accent-hover"
-          >
-            Pricing
-          </a>
-          <Link
-            href="/demo"
-            className="text-sm text-[--color-text-secondary] hover:text-dark accent-hover"
-          >
-            Demo
-          </Link>
-          <Link
-            href="/partners"
-            className="text-sm text-[--color-text-secondary] hover:text-dark accent-hover"
-          >
-            Partners
-          </Link>
+          {NAV_LINKS.map((link) =>
+            link.href.startsWith("/#") ? (
+              <a
+                key={link.href}
+                href={link.href}
+                className="text-sm text-[--color-text-secondary] hover:text-dark accent-hover"
+              >
+                {link.label}
+              </a>
+            ) : (
+              <Link
+                key={link.href}
+                href={link.href}
+                className={`text-sm accent-hover ${
+                  isActive(link.href)
+                    ? "text-dark font-medium"
+                    : "text-[--color-text-secondary] hover:text-dark"
+                }`}
+              >
+                {link.label}
+              </Link>
+            )
+          )}
           {isSignedIn ? (
             <Link
               href="/dashboard"
@@ -100,41 +108,31 @@ export function Nav({ isSignedIn = false }: { isSignedIn?: boolean }) {
       {open && (
         <div className="md:hidden border-t border-border bg-white absolute inset-x-0 top-full z-50 shadow-lg">
           <div className="flex flex-col px-6 py-4 gap-1">
-            <a
-              href="/#how-it-works"
-              onClick={() => setOpen(false)}
-              className="text-sm text-[--color-text-secondary] hover:text-dark py-2.5"
-            >
-              How It Works
-            </a>
-            <a
-              href="/#industries"
-              onClick={() => setOpen(false)}
-              className="text-sm text-[--color-text-secondary] hover:text-dark py-2.5"
-            >
-              Industries
-            </a>
-            <a
-              href="/#pricing"
-              onClick={() => setOpen(false)}
-              className="text-sm text-[--color-text-secondary] hover:text-dark py-2.5"
-            >
-              Pricing
-            </a>
-            <Link
-              href="/demo"
-              onClick={() => setOpen(false)}
-              className="text-sm text-[--color-text-secondary] hover:text-dark py-2.5"
-            >
-              Demo
-            </Link>
-            <Link
-              href="/partners"
-              onClick={() => setOpen(false)}
-              className="text-sm text-[--color-text-secondary] hover:text-dark py-2.5"
-            >
-              Partners
-            </Link>
+            {NAV_LINKS.map((link) =>
+              link.href.startsWith("/#") ? (
+                <a
+                  key={link.href}
+                  href={link.href}
+                  onClick={() => setOpen(false)}
+                  className="text-sm text-[--color-text-secondary] hover:text-dark py-2.5"
+                >
+                  {link.label}
+                </a>
+              ) : (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  onClick={() => setOpen(false)}
+                  className={`text-sm py-2.5 ${
+                    isActive(link.href)
+                      ? "text-dark font-medium"
+                      : "text-[--color-text-secondary] hover:text-dark"
+                  }`}
+                >
+                  {link.label}
+                </Link>
+              )
+            )}
 
             <div className="border-t border-border mt-2 pt-4 pb-2 flex flex-col gap-3">
               {isSignedIn ? (

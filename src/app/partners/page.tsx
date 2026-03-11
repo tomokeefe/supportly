@@ -1,8 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import Link from "next/link";
-import { ResolvlyLogo } from "@/components/resolvly-logo";
+import { Nav } from "@/components/nav";
 
 type AffiliateData = {
   affiliate: {
@@ -529,13 +528,7 @@ export default function PartnersPage() {
   if (view === "dashboard") {
     return (
       <div className="min-h-screen bg-cream">
-        <header className="border-b border-border bg-white">
-          <div className="max-w-5xl mx-auto px-6 py-4 flex items-center justify-between">
-            <Link href="/">
-              <ResolvlyLogo size="md" />
-            </Link>
-          </div>
-        </header>
+        <Nav />
         <div className="max-w-5xl mx-auto px-6 py-12">
           <Dashboard code={code} />
         </div>
@@ -545,37 +538,7 @@ export default function PartnersPage() {
 
   return (
     <div className="min-h-screen bg-cream">
-      <header className="border-b border-border bg-white">
-        <div className="max-w-5xl mx-auto px-6 py-4 flex items-center justify-between">
-          <Link href="/">
-            <ResolvlyLogo size="md" />
-          </Link>
-          <div className="flex items-center gap-3">
-            {tab === "partner" && view === "apply" && (
-              <button
-                onClick={() => setView("login")}
-                className="text-sm text-[--color-text-secondary] hover:text-dark hidden sm:block"
-              >
-                Already a partner? Log in
-              </button>
-            )}
-            {tab === "partner" && view === "login" && (
-              <button
-                onClick={() => setView("apply")}
-                className="text-sm text-[--color-text-secondary] hover:text-dark hidden sm:block"
-              >
-                Apply to become a partner
-              </button>
-            )}
-            <Link
-              href="/sign-up"
-              className="text-sm font-medium bg-vermillion text-white px-4 py-2 rounded-full hover:bg-[#C7412A] accent-hover"
-            >
-              Sign Up
-            </Link>
-          </div>
-        </div>
-      </header>
+      <Nav />
 
       <div className="max-w-5xl mx-auto px-6 py-12">
         {/* Hero */}
