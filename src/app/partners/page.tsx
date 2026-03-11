@@ -494,13 +494,19 @@ export default function PartnersPage() {
         return;
       }
       const orgData = await orgRes.json();
+      const orgId = orgData.org?.id;
+
+      if (!orgId) {
+        window.location.href = `/sign-up?plan=${plan}`;
+        return;
+      }
 
       const checkoutRes = await fetch("/api/stripe/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           plan,
-          orgId: orgData.id,
+          orgId,
           returnTo: "agency",
         }),
       });
