@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
-import { useAuth, useClerk, UserButton } from "@clerk/nextjs";
+import { useAuth, useClerk, useUser, UserButton } from "@clerk/nextjs";
 import { ResolvlyLogo } from "@/components/resolvly-logo";
 
 type OrgInfo = {
@@ -83,6 +83,24 @@ function AuthGuard({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
+function UserName() {
+  const { user } = useUser();
+  if (!user) return null;
+  const name =
+    user.fullName || user.primaryEmailAddress?.emailAddress || "Account";
+  const email = user.primaryEmailAddress?.emailAddress;
+  return (
+    <div className="flex-1 min-w-0">
+      <p className="text-sm font-medium text-dark truncate">{name}</p>
+      {email && name !== email && (
+        <p className="text-xs text-[--color-text-secondary] truncate">
+          {email}
+        </p>
+      )}
+    </div>
+  );
+}
+
 export default function DashboardLayout({
   children,
 }: {
@@ -153,15 +171,16 @@ export default function DashboardLayout({
             })}
           </nav>
 
-          {/* Footer */}
-          <div className="px-6 py-4 border-t border-border flex items-center gap-3">
-            <UserButton />
-            <Link
-              href="/demo"
-              className="text-xs text-[--color-text-secondary] hover:text-dark accent-hover"
-            >
-              View Demo
-            </Link>
+          {/* User footer */}
+          <div className="px-4 py-4 border-t border-border">
+            <div className="flex items-center gap-3">
+              <UserButton
+                appearance={{
+                  elements: { avatarBox: "w-8 h-8" },
+                }}
+              />
+              <UserName />
+            </div>
           </div>
         </aside>
 
