@@ -469,6 +469,7 @@ function LoginForm({ onLogin }: { onLogin: (code: string) => void }) {
 
 // ── Main Page ─────────────────────────────────────────────────────────
 export default function PartnersPage() {
+  const [tab, setTab] = useState<"agency" | "partner">("agency");
   const [view, setView] = useState<"loading" | "apply" | "login" | "dashboard">(
     "loading"
   );
@@ -488,16 +489,13 @@ export default function PartnersPage() {
   async function handleAgencyCheckout(plan: string) {
     setAgencyLoading(plan);
     try {
-      // Check if user is signed in and has an org
       const orgRes = await fetch("/api/org");
       if (!orgRes.ok) {
-        // Not signed in — redirect to sign up with plan
         window.location.href = `/sign-up?plan=${plan}`;
         return;
       }
       const orgData = await orgRes.json();
 
-      // Start Stripe checkout
       const checkoutRes = await fetch("/api/stripe/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -527,6 +525,24 @@ export default function PartnersPage() {
     setView("dashboard");
   }
 
+  // If affiliate is logged in, show dashboard directly
+  if (view === "dashboard") {
+    return (
+      <div className="min-h-screen bg-cream">
+        <header className="border-b border-border bg-white">
+          <div className="max-w-5xl mx-auto px-6 py-4 flex items-center justify-between">
+            <Link href="/">
+              <ResolvlyLogo size="md" />
+            </Link>
+          </div>
+        </header>
+        <div className="max-w-5xl mx-auto px-6 py-12">
+          <Dashboard code={code} />
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-cream">
       <header className="border-b border-border bg-white">
@@ -535,7 +551,7 @@ export default function PartnersPage() {
             <ResolvlyLogo size="md" />
           </Link>
           <div className="flex items-center gap-4">
-            {view === "apply" && (
+            {tab === "partner" && view === "apply" && (
               <button
                 onClick={() => setView("login")}
                 className="text-sm text-[--color-text-secondary] hover:text-dark"
@@ -543,7 +559,7 @@ export default function PartnersPage() {
                 Already a partner? Log in
               </button>
             )}
-            {view === "login" && (
+            {tab === "partner" && view === "login" && (
               <button
                 onClick={() => setView("apply")}
                 className="text-sm text-[--color-text-secondary] hover:text-dark"
@@ -557,41 +573,53 @@ export default function PartnersPage() {
 
       <div className="max-w-5xl mx-auto px-6 py-12">
         {/* Hero */}
-        {view !== "dashboard" && (
-          <div className="text-center mb-12">
-            <h1 className="heading-editorial text-dark text-3xl md:text-4xl mb-3">
-              Partner Program
-            </h1>
-            <p className="text-[--color-text-secondary] max-w-lg mx-auto">
-              Earn 20% recurring commission for every customer you refer to
-              Resolvly. Our partners earn up to $79.80/mo per referral.
-            </p>
-          </div>
-        )}
+        <div className="text-center mb-8">
+          <h1 className="heading-editorial text-dark text-3xl md:text-4xl mb-3">
+            Grow with Resolvly
+          </h1>
+          <p className="text-[--color-text-secondary] max-w-lg mx-auto">
+            Whether you run a web design agency or want to earn referral
+            commissions, we have a program for you.
+          </p>
+        </div>
 
-        {view === "loading" && (
-          <div className="text-center py-12 text-[--color-text-secondary]">
-            Loading...
+        {/* Tabs */}
+        <div className="flex justify-center mb-10">
+          <div className="inline-flex bg-white rounded-full border border-border p-1">
+            <button
+              onClick={() => setTab("agency")}
+              className={`px-6 py-2.5 rounded-full text-sm font-medium transition-colors ${
+                tab === "agency"
+                  ? "bg-dark text-cream"
+                  : "text-[--color-text-secondary] hover:text-dark"
+              }`}
+            >
+              Agency Reseller
+            </button>
+            <button
+              onClick={() => setTab("partner")}
+              className={`px-6 py-2.5 rounded-full text-sm font-medium transition-colors ${
+                tab === "partner"
+                  ? "bg-dark text-cream"
+                  : "text-[--color-text-secondary] hover:text-dark"
+              }`}
+            >
+              Referral Partner
+            </button>
           </div>
-        )}
-        {view === "apply" && <ApplyForm onSuccess={handleLogin} />}
-        {view === "login" && <LoginForm onLogin={handleLogin} />}
-        {view === "dashboard" && <Dashboard code={code} />}
+        </div>
 
-        {/* Agency Reseller Program */}
-        {view !== "dashboard" && (
-          <div className="mt-20">
+        {/* Agency Tab */}
+        {tab === "agency" && (
+          <div>
             <div className="text-center mb-10">
-              <div className="inline-block px-3 py-1 rounded-full bg-purple-100 text-purple-700 text-xs font-medium mb-4">
-                For Web Design Agencies
-              </div>
-              <h2 className="heading-editorial text-dark text-2xl md:text-3xl mb-3">
-                Agency Reseller Program
+              <h2 className="text-xl font-semibold text-dark mb-2">
+                Bulk Licenses for Web Design Agencies
               </h2>
-              <p className="text-[--color-text-secondary] max-w-lg mx-auto">
-                Buy bulk AI support licenses at wholesale pricing and resell to
-                your clients. Each license includes a fully independent org with
-                its own knowledge base, branding, and widget.
+              <p className="text-[--color-text-secondary] max-w-lg mx-auto text-sm">
+                Buy wholesale AI support licenses and resell to your clients at
+                any price point. Each license is a fully independent org with its
+                own knowledge base, branding, and embeddable widget.
               </p>
             </div>
 
@@ -621,12 +649,12 @@ export default function PartnersPage() {
                   key={tier.name}
                   className={`bg-white rounded-xl border p-6 relative ${
                     tier.popular
-                      ? "border-purple-300 ring-2 ring-purple-100"
+                      ? "border-vermillion/30 ring-2 ring-vermillion/10"
                       : "border-border"
                   }`}
                 >
                   {tier.popular && (
-                    <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-purple-600 text-white text-xs font-medium px-3 py-0.5 rounded-full">
+                    <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-vermillion text-white text-xs font-medium px-3 py-0.5 rounded-full">
                       Most Popular
                     </span>
                   )}
@@ -649,26 +677,26 @@ export default function PartnersPage() {
                   </p>
                   <ul className="text-sm text-[--color-text-secondary] space-y-2 mb-6">
                     <li className="flex gap-2">
-                      <span className="text-purple-600">&#10003;</span>
+                      <span className="text-vermillion">&#10003;</span>
                       300 conversations/mo per client
                     </li>
                     <li className="flex gap-2">
-                      <span className="text-purple-600">&#10003;</span>
+                      <span className="text-vermillion">&#10003;</span>
                       White-label ready
                     </li>
                     <li className="flex gap-2">
-                      <span className="text-purple-600">&#10003;</span>
+                      <span className="text-vermillion">&#10003;</span>
                       Agency management dashboard
                     </li>
                     <li className="flex gap-2">
-                      <span className="text-purple-600">&#10003;</span>
+                      <span className="text-vermillion">&#10003;</span>
                       Priority support
                     </li>
                   </ul>
                   <button
                     onClick={() => handleAgencyCheckout(`agency_${tier.licenses}`)}
                     disabled={agencyLoading !== null}
-                    className="block text-center w-full py-2.5 rounded-full text-sm font-medium bg-purple-600 text-white hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="block text-center w-full py-2.5 rounded-full text-sm font-medium bg-vermillion text-white hover:bg-[#C7412A] disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {agencyLoading === `agency_${tier.licenses}` ? "Redirecting..." : "Get Started"}
                   </button>
@@ -677,9 +705,22 @@ export default function PartnersPage() {
             </div>
 
             <p className="text-center text-xs text-[--color-text-secondary] mt-6">
-              Sign up or sign in to purchase an agency plan. Your agency dashboard
-              will be ready immediately after checkout.
+              Sign up or sign in to purchase. Your agency dashboard is ready
+              immediately after checkout.
             </p>
+          </div>
+        )}
+
+        {/* Partner Tab */}
+        {tab === "partner" && (
+          <div>
+            {view === "loading" && (
+              <div className="text-center py-12 text-[--color-text-secondary]">
+                Loading...
+              </div>
+            )}
+            {view === "apply" && <ApplyForm onSuccess={handleLogin} />}
+            {view === "login" && <LoginForm onLogin={handleLogin} />}
           </div>
         )}
       </div>
