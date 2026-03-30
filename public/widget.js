@@ -83,7 +83,8 @@
   // ── Styles ───────────────────────────────────────────────────────
   var posLeft = CONFIG.position === "bottom-left";
   var css = `
-    #resolvly-widget * { box-sizing: border-box; margin: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", sans-serif; -webkit-font-smoothing: antialiased; }
+    #resolvly-widget * { box-sizing: border-box; margin: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", sans-serif; -webkit-font-smoothing: antialiased; color: inherit; }
+    #resolvly-window { color: #1f2937; }
 
     /* ── Bubble ── */
     #resolvly-bubble {
@@ -285,7 +286,7 @@
     #resolvly-input {
       flex: 1; border: 1px solid #e5e5e5; border-radius: 22px; padding: 9px 16px;
       font-size: 14px; outline: none; transition: border-color 0.2s, box-shadow 0.2s;
-      background: #fafafa;
+      background: #fafafa; color: #1f2937;
     }
     #resolvly-input:focus {
       border-color: ${CONFIG.primaryColor};
