@@ -34,10 +34,21 @@
     return { r: r, g: g, b: b };
   }
 
+  // Determine if the brand color is light or dark using relative luminance
+  function isLightColor(hex) {
+    var c = hexToRgb(hex);
+    // sRGB relative luminance formula
+    var luminance = (0.299 * c.r + 0.587 * c.g + 0.114 * c.b) / 255;
+    return luminance > 0.55;
+  }
+
   var rgb = hexToRgb(CONFIG.primaryColor);
   var primaryLight = "rgba(" + rgb.r + "," + rgb.g + "," + rgb.b + ",0.08)";
   var primaryMedium = "rgba(" + rgb.r + "," + rgb.g + "," + rgb.b + ",0.15)";
   var primaryDark = "rgba(" + rgb.r + "," + rgb.g + "," + rgb.b + ",0.9)";
+  var brandIsLight = isLightColor(CONFIG.primaryColor);
+  var onBrandColor = brandIsLight ? "#1a1a1a" : "white";
+  var onBrandColorSoft = brandIsLight ? "rgba(0,0,0,0.65)" : "rgba(255,255,255,0.85)";
 
   // ── Visitor ID (localStorage) ───────────────────────────────────
   var visitorId = null;
@@ -57,8 +68,8 @@
   // ── SVG Icons ─────────────────────────────────────────────────
   var avatarSvg = '<svg viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">' +
     '<rect width="36" height="36" rx="12" fill="' + CONFIG.primaryColor + '"/>' +
-    '<path d="M18 10c-1.5 0-2.7 1.2-2.7 2.7s1.2 2.7 2.7 2.7 2.7-1.2 2.7-2.7S19.5 10 18 10z" fill="white" opacity="0.9"/>' +
-    '<path d="M11 22.5c0-2.5 2-4.5 4.5-4.5h5c2.5 0 4.5 2 4.5 4.5v1a1.5 1.5 0 01-1.5 1.5h-11A1.5 1.5 0 0111 23.5v-1z" fill="white" opacity="0.9"/>' +
+    '<path d="M18 10c-1.5 0-2.7 1.2-2.7 2.7s1.2 2.7 2.7 2.7 2.7-1.2 2.7-2.7S19.5 10 18 10z" fill="' + onBrandColor + '" opacity="0.9"/>' +
+    '<path d="M11 22.5c0-2.5 2-4.5 4.5-4.5h5c2.5 0 4.5 2 4.5 4.5v1a1.5 1.5 0 01-1.5 1.5h-11A1.5 1.5 0 0111 23.5v-1z" fill="' + onBrandColor + '" opacity="0.9"/>' +
     '</svg>';
 
   var chatIconSvg = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
@@ -78,7 +89,7 @@
     #resolvly-bubble {
       position: fixed; ${posLeft ? "left: 20px" : "right: 20px"}; bottom: 20px;
       width: 56px; height: 56px; border-radius: 16px;
-      background: ${CONFIG.primaryColor}; color: white; border: none; cursor: pointer;
+      background: ${CONFIG.primaryColor}; color: ${onBrandColor}; border: none; cursor: pointer;
       box-shadow: 0 4px 20px rgba(0,0,0,0.15), 0 0 0 0 ${primaryMedium};
       z-index: 99999;
       display: flex; align-items: center; justify-content: center;
@@ -130,7 +141,7 @@
     /* ── Header ── */
     #resolvly-header {
       background: linear-gradient(135deg, ${CONFIG.primaryColor}, ${primaryDark});
-      color: white; padding: 18px 20px;
+      color: ${onBrandColor}; padding: 18px 20px;
       display: flex; align-items: center; gap: 12px;
       position: relative;
       flex-shrink: 0;
@@ -143,11 +154,11 @@
     #resolvly-header-status {
       position: absolute; bottom: -1px; right: -1px;
       width: 10px; height: 10px; border-radius: 50%;
-      background: #22c55e; border: 2px solid ${CONFIG.primaryColor};
+      background: #22c55e; border: 2px solid ${brandIsLight ? "rgba(0,0,0,0.1)" : CONFIG.primaryColor};
     }
     #resolvly-header-info { flex: 1; min-width: 0; }
     #resolvly-header-info h3 { font-size: 15px; font-weight: 600; letter-spacing: -0.01em; }
-    #resolvly-header-info p { font-size: 12px; opacity: 0.85; margin-top: 1px; }
+    #resolvly-header-info p { font-size: 12px; color: ${onBrandColorSoft}; margin-top: 1px; }
 
     /* ── Messages ── */
     #resolvly-messages {
@@ -192,7 +203,7 @@
       box-shadow: 0 1px 3px rgba(0,0,0,0.06);
     }
     .resolvly-msg.user {
-      background: ${CONFIG.primaryColor}; color: white;
+      background: ${CONFIG.primaryColor}; color: ${onBrandColor};
       border-radius: 16px 16px 4px 16px;
     }
     .resolvly-msg.system {
@@ -283,7 +294,7 @@
     }
     #resolvly-send {
       width: 36px; height: 36px; border-radius: 50%; border: none;
-      background: ${CONFIG.primaryColor}; color: white; cursor: pointer;
+      background: ${CONFIG.primaryColor}; color: ${onBrandColor}; cursor: pointer;
       display: flex; align-items: center; justify-content: center; flex-shrink: 0;
       transition: transform 0.15s, opacity 0.15s;
     }
