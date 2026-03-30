@@ -19,7 +19,7 @@
     pageContext: script?.getAttribute("data-page-context") === "true",
     questions: script?.getAttribute("data-questions")
       ? script.getAttribute("data-questions").split("|").map(function (q) { return q.trim(); }).filter(Boolean)
-      : [],
+      : ["What can you help me with?", "How does this work?", "I need help with something"],
   };
 
   var conversationId = null;
