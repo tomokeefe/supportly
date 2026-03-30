@@ -18,7 +18,7 @@ const VERTICALS = [
   "Other",
 ];
 
-const PLAN_KEYS = Object.keys(PLANS) as PlanName[];
+const CONSUMER_PLANS: PlanName[] = ["free", "starter", "pro", "business"];
 const STEP_LABELS = ["Your business", "Choose plan", "Knowledge base", "Go live"];
 
 type FAQ = { title: string; content: string };
@@ -50,7 +50,7 @@ function OnboardingWizard() {
   const [orgId, setOrgId] = useState("");
   const [widgetColor, setWidgetColor] = useState("#DC4A2E");
 
-  // ── Restore state from URL params (Stripe return) ──
+  // ── Restore state from URL params (Stripe return or plan pre-select) ──
   useEffect(() => {
     const stepParam = searchParams.get("step");
     const orgIdParam = searchParams.get("orgId");
@@ -58,6 +58,7 @@ function OnboardingWizard() {
     const verticalParam = searchParams.get("vertical");
 
     if (stepParam === "3" && orgIdParam) {
+      // Returning from Stripe checkout
       setStep(3);
       setOrgId(orgIdParam);
       if (planParam && planParam in PLANS) setSelectedPlan(planParam);
@@ -68,6 +69,13 @@ function OnboardingWizard() {
           const verticalFaqs = getVerticalFAQs(slug);
           if (verticalFaqs.length > 0) setFaqs(verticalFaqs);
         }
+      }
+    } else {
+      // Pre-select plan from URL param or localStorage (saved during sign-up)
+      const savedPlan = planParam || localStorage.getItem("resolvly_selected_plan");
+      if (savedPlan && savedPlan in PLANS) {
+        setSelectedPlan(savedPlan as PlanName);
+        localStorage.removeItem("resolvly_selected_plan");
       }
     }
   }, [searchParams]);
@@ -112,7 +120,8 @@ function OnboardingWizard() {
         }),
       });
       const data = await res.json();
-      if (!data.orgSlug) {
+      if (!res.ok || !data.orgSlug) {
+        alert(data.error || "Failed to create organization. Please try again.");
         setLoading(false);
         return;
       }
@@ -121,13 +130,14 @@ function OnboardingWizard() {
       setOrgId(data.orgId);
 
       if (selectedPlan !== "free") {
+        const isAgency = selectedPlan.startsWith("agency_");
         const checkoutRes = await fetch("/api/stripe/checkout", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             plan: selectedPlan,
             orgId: data.orgId,
-            returnTo: "onboarding",
+            returnTo: isAgency ? "agency" : "onboarding",
             vertical,
           }),
         });
@@ -333,8 +343,9 @@ function OnboardingWizard() {
               Start free and upgrade anytime. All plans include your AI agent, knowledge base, and chat widget.
             </p>
 
+            {/* Consumer Plans */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
-              {PLAN_KEYS.map((key) => {
+              {CONSUMER_PLANS.map((key) => {
                 const plan = PLANS[key];
                 const planLimits = PLAN_LIMITS[key];
                 const isRecommended = "recommended" in plan && plan.recommended;
@@ -374,7 +385,7 @@ function OnboardingWizard() {
                       {planLimits.allowFileUpload && (
                         <li className="text-xs text-dark font-medium flex items-center gap-1.5">
                           <span className="w-1 h-1 bg-vermillion rounded-full flex-shrink-0" />
-                          KB file upload (.txt, .csv, .json)
+                          KB file upload (.docx, .txt, .csv, .json)
                         </li>
                       )}
                       <li className="text-xs text-[--color-text-secondary] flex items-center gap-1.5">
@@ -527,7 +538,7 @@ function OnboardingWizard() {
                   <input
                     ref={fileInputRef}
                     type="file"
-                    accept=".txt,.csv,.json"
+                    accept=".txt,.csv,.json,.docx,.doc"
                     onChange={handleFileUpload}
                     className="hidden"
                     disabled={!canUploadFiles}
@@ -537,7 +548,7 @@ function OnboardingWizard() {
                     {fileUploadLoading ? "Parsing..." : "Click to upload"}
                   </p>
                   <p className="text-xs text-[--color-text-secondary]">
-                    .txt, .csv, or .json — max 5MB
+                    .txt, .csv, .json, .docx, or .doc — max 10MB
                   </p>
                 </div>
               </div>

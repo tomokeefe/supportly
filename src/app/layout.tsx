@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Script from "next/script";
 import { DM_Serif_Display, DM_Sans, JetBrains_Mono } from "next/font/google";
 import { ClerkWrapper } from "@/components/clerk-wrapper";
 import "./globals.css";
@@ -38,6 +39,13 @@ export default function RootLayout({
       <body
         className={`${dmSans.variable} ${dmSerifDisplay.variable} ${jetbrainsMono.variable} font-sans antialiased`}
       >
+        {process.env.NEXT_PUBLIC_UMAMI_WEBSITE_ID && (
+          <Script
+            src="https://cloud.umami.is/script.js"
+            data-website-id={process.env.NEXT_PUBLIC_UMAMI_WEBSITE_ID}
+            strategy="afterInteractive"
+          />
+        )}
         <ClerkWrapper>{children}</ClerkWrapper>
       </body>
     </html>

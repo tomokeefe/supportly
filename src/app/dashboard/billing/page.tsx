@@ -9,7 +9,7 @@ type OrgBilling = {
   currentPeriodConversations: number;
 };
 
-const PLAN_KEYS = Object.keys(PLANS) as PlanName[];
+const PLAN_KEYS: PlanName[] = ["free", "starter", "pro", "business"];
 
 export default function BillingPage() {
   const [billing, setBilling] = useState<OrgBilling | null>(null);

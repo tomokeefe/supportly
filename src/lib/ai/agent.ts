@@ -57,14 +57,19 @@ export function searchKnowledge(
   items: KnowledgeItem[],
   topK = 5
 ): KnowledgeItem[] {
-  const queryTerms = query.toLowerCase().split(/\s+/);
+  // Normalize: strip punctuation, lowercase, split
+  const normalize = (s: string) =>
+    s.toLowerCase().replace(/['']/g, "").replace(/[^a-z0-9\s]/g, " ");
+
+  const queryTerms = normalize(query).split(/\s+/).filter((t) => t.length >= 3);
 
   const scored = items.map((item) => {
-    const text = `${item.title} ${item.content} ${item.category ?? ""}`.toLowerCase();
+    const text = normalize(`${item.title} ${item.content} ${item.category ?? ""}`);
     let score = 0;
     for (const term of queryTerms) {
-      if (term.length < 3) continue;
-      const regex = new RegExp(term, "g");
+      // Use word-stem-ish matching: "renters" matches "renter", "insurance" matches "insurance"
+      const stem = term.replace(/(s|ing|ed|ly|ment)$/, "");
+      const regex = new RegExp(stem, "g");
       const matches = text.match(regex);
       score += matches ? matches.length : 0;
     }

@@ -11,7 +11,7 @@ const onboardingSchema = z.object({
     vertical: z.string().min(1).max(100),
     websiteUrl: z.string().max(500).optional().default(""),
   }),
-  plan: z.enum(["free", "starter", "pro", "business"]).default("free"),
+  plan: z.enum(["free", "starter", "pro", "business", "agency_25", "agency_50", "agency_100"]).default("free"),
   widgetColor: z
     .string()
     .regex(/^#[0-9a-fA-F]{6}$/)

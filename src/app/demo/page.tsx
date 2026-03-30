@@ -140,6 +140,10 @@ export default async function DemoPage() {
         src="/widget.js"
         data-org="sunrise-pm"
         data-color="#DC4A2E"
+        data-header-title="Sunrise PM"
+        data-agent-name="AI Assistant"
+        data-greeting="Hi! I'm Sunrise PM's virtual assistant. How can I help you today?"
+        data-questions="How do I pay rent?|I need maintenance help|What's the pet policy?|What amenities do you have?"
         strategy="afterInteractive"
       />
     </div>

@@ -1,10 +1,22 @@
 "use client";
 
+import { Suspense, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { SignUp } from "@clerk/nextjs";
 import { ResolvlyLogo } from "@/components/resolvly-logo";
 
-export default function SignUpPage() {
+function SignUpContent() {
+  const searchParams = useSearchParams();
+
+  // Persist selected plan across the Clerk sign-up redirect
+  useEffect(() => {
+    const plan = searchParams.get("plan");
+    if (plan) {
+      localStorage.setItem("resolvly_selected_plan", plan);
+    }
+  }, [searchParams]);
+
   return (
     <div className="min-h-screen bg-cream flex flex-col">
       <nav className="border-b border-border">
@@ -32,5 +44,13 @@ export default function SignUpPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function SignUpPage() {
+  return (
+    <Suspense>
+      <SignUpContent />
+    </Suspense>
   );
 }

@@ -11,15 +11,33 @@
     greeting:
       script?.getAttribute("data-greeting") ||
       "Hi! How can I help you today?",
-    headerTitle: script?.getAttribute("data-header-title") || "Support Chat",
+    headerTitle: script?.getAttribute("data-header-title") || "Support",
+    agentName: script?.getAttribute("data-agent-name") || "AI Assistant",
     placeholder:
       script?.getAttribute("data-placeholder") || "Type a message...",
     poweredBy: script?.getAttribute("data-powered-by") || "Resolvly",
     pageContext: script?.getAttribute("data-page-context") === "true",
+    questions: script?.getAttribute("data-questions")
+      ? script.getAttribute("data-questions").split("|").map(function (q) { return q.trim(); }).filter(Boolean)
+      : [],
   };
 
   var conversationId = null;
   var isOpen = false;
+  var hasInteracted = false; // true once user has sent a message
+
+  // ── Color Utilities ────────────────────────────────────────────
+  function hexToRgb(hex) {
+    var r = parseInt(hex.slice(1, 3), 16);
+    var g = parseInt(hex.slice(3, 5), 16);
+    var b = parseInt(hex.slice(5, 7), 16);
+    return { r: r, g: g, b: b };
+  }
+
+  var rgb = hexToRgb(CONFIG.primaryColor);
+  var primaryLight = "rgba(" + rgb.r + "," + rgb.g + "," + rgb.b + ",0.08)";
+  var primaryMedium = "rgba(" + rgb.r + "," + rgb.g + "," + rgb.b + ",0.15)";
+  var primaryDark = "rgba(" + rgb.r + "," + rgb.g + "," + rgb.b + ",0.9)";
 
   // ── Visitor ID (localStorage) ───────────────────────────────────
   var visitorId = null;
@@ -36,97 +54,266 @@
     // localStorage unavailable
   }
 
+  // ── SVG Icons ─────────────────────────────────────────────────
+  var avatarSvg = '<svg viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">' +
+    '<rect width="36" height="36" rx="12" fill="' + CONFIG.primaryColor + '"/>' +
+    '<path d="M18 10c-1.5 0-2.7 1.2-2.7 2.7s1.2 2.7 2.7 2.7 2.7-1.2 2.7-2.7S19.5 10 18 10z" fill="white" opacity="0.9"/>' +
+    '<path d="M11 22.5c0-2.5 2-4.5 4.5-4.5h5c2.5 0 4.5 2 4.5 4.5v1a1.5 1.5 0 01-1.5 1.5h-11A1.5 1.5 0 0111 23.5v-1z" fill="white" opacity="0.9"/>' +
+    '</svg>';
+
+  var chatIconSvg = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
+    '<path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/>' +
+    '</svg>';
+
+  var closeIconSvg = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">' +
+    '<line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>' +
+    '</svg>';
+
   // ── Styles ───────────────────────────────────────────────────────
+  var posLeft = CONFIG.position === "bottom-left";
   var css = `
-    #resolvly-widget * { box-sizing: border-box; margin: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+    #resolvly-widget * { box-sizing: border-box; margin: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", sans-serif; -webkit-font-smoothing: antialiased; }
+
+    /* ── Bubble ── */
     #resolvly-bubble {
-      position: fixed; ${CONFIG.position === "bottom-left" ? "left: 20px" : "right: 20px"}; bottom: 20px;
-      width: 60px; height: 60px; border-radius: 50%;
+      position: fixed; ${posLeft ? "left: 20px" : "right: 20px"}; bottom: 20px;
+      width: 56px; height: 56px; border-radius: 16px;
       background: ${CONFIG.primaryColor}; color: white; border: none; cursor: pointer;
-      box-shadow: 0 4px 16px rgba(0,0,0,0.2); z-index: 99999;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.15), 0 0 0 0 ${primaryMedium};
+      z-index: 99999;
       display: flex; align-items: center; justify-content: center;
-      transition: transform 0.2s, box-shadow 0.2s;
+      transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.2s;
+      animation: resolvly-pulse 3s ease-in-out infinite;
     }
-    #resolvly-bubble:hover { transform: scale(1.08); box-shadow: 0 6px 24px rgba(0,0,0,0.25); }
-    #resolvly-bubble svg { width: 28px; height: 28px; }
+    #resolvly-bubble:hover {
+      transform: scale(1.06);
+      box-shadow: 0 6px 28px rgba(0,0,0,0.2);
+      animation: none;
+    }
+    #resolvly-bubble svg { width: 24px; height: 24px; transition: transform 0.2s ease; }
+    #resolvly-bubble.resolvly-close-mode {
+      animation: none;
+      border-radius: 14px;
+    }
+    #resolvly-bubble.resolvly-close-mode svg { transform: rotate(0deg); }
+    @keyframes resolvly-pulse {
+      0%, 100% { box-shadow: 0 4px 20px rgba(0,0,0,0.15), 0 0 0 0 ${primaryMedium}; }
+      50% { box-shadow: 0 4px 20px rgba(0,0,0,0.15), 0 0 0 8px rgba(0,0,0,0); }
+    }
+    /* Online dot */
+    #resolvly-bubble-dot {
+      position: absolute; top: -2px; right: -2px;
+      width: 14px; height: 14px; border-radius: 50%;
+      background: #22c55e; border: 2.5px solid white;
+      transition: opacity 0.2s;
+    }
+    #resolvly-bubble.resolvly-close-mode #resolvly-bubble-dot { opacity: 0; }
+
+    /* ── Window ── */
     #resolvly-window {
-      position: fixed; ${CONFIG.position === "bottom-left" ? "left: 20px" : "right: 20px"}; bottom: 92px;
-      width: 380px; max-height: 520px; border-radius: 16px;
-      background: white; box-shadow: 0 8px 40px rgba(0,0,0,0.16);
-      z-index: 99999; display: none; flex-direction: column; overflow: hidden;
+      position: fixed; ${posLeft ? "left: 20px" : "right: 20px"}; bottom: 88px;
+      width: 380px; max-height: 560px; border-radius: 20px;
+      background: #ffffff;
+      box-shadow: 0 12px 48px rgba(0,0,0,0.12), 0 2px 8px rgba(0,0,0,0.06);
+      z-index: 99998; display: none; flex-direction: column; overflow: hidden;
+      border: 1px solid rgba(0,0,0,0.06);
     }
-    #resolvly-window.open { display: flex; animation: resolvly-slide-up 0.25s ease-out; }
-    @keyframes resolvly-slide-up { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+    #resolvly-window.open {
+      display: flex;
+      animation: resolvly-slide-up 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    @keyframes resolvly-slide-up {
+      from { opacity: 0; transform: translateY(16px) scale(0.97); }
+      to { opacity: 1; transform: translateY(0) scale(1); }
+    }
+
+    /* ── Header ── */
     #resolvly-header {
-      background: ${CONFIG.primaryColor}; color: white; padding: 16px 20px;
-      display: flex; align-items: center; justify-content: space-between;
+      background: linear-gradient(135deg, ${CONFIG.primaryColor}, ${primaryDark});
+      color: white; padding: 18px 20px;
+      display: flex; align-items: center; gap: 12px;
+      position: relative;
+      flex-shrink: 0;
     }
-    #resolvly-header h3 { font-size: 15px; font-weight: 600; }
-    #resolvly-header button { background: none; border: none; color: white; cursor: pointer; font-size: 20px; line-height: 1; opacity: 0.8; }
-    #resolvly-header button:hover { opacity: 1; }
+    #resolvly-header-avatar {
+      width: 36px; height: 36px; border-radius: 12px;
+      flex-shrink: 0; position: relative;
+    }
+    #resolvly-header-avatar svg { width: 36px; height: 36px; }
+    #resolvly-header-status {
+      position: absolute; bottom: -1px; right: -1px;
+      width: 10px; height: 10px; border-radius: 50%;
+      background: #22c55e; border: 2px solid ${CONFIG.primaryColor};
+    }
+    #resolvly-header-info { flex: 1; min-width: 0; }
+    #resolvly-header-info h3 { font-size: 15px; font-weight: 600; letter-spacing: -0.01em; }
+    #resolvly-header-info p { font-size: 12px; opacity: 0.85; margin-top: 1px; }
+
+    /* ── Messages ── */
     #resolvly-messages {
-      flex: 1; overflow-y: auto; padding: 16px; min-height: 300px; max-height: 360px;
-      display: flex; flex-direction: column; gap: 12px;
+      flex: 1; overflow-y: auto; padding: 16px; min-height: 0; max-height: 380px;
+      display: flex; flex-direction: column; gap: 6px;
+      background: #fafafa;
     }
+    #resolvly-messages::-webkit-scrollbar { width: 4px; }
+    #resolvly-messages::-webkit-scrollbar-track { background: transparent; }
+    #resolvly-messages::-webkit-scrollbar-thumb { background: #d4d4d4; border-radius: 4px; }
+
+    /* Message row (avatar + bubble) */
+    .resolvly-msg-row {
+      display: flex; gap: 8px; align-items: flex-end;
+      animation: resolvly-msg-in 0.25s ease-out;
+    }
+    .resolvly-msg-row.user { flex-direction: row-reverse; }
+    @keyframes resolvly-msg-in {
+      from { opacity: 0; transform: translateY(6px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Mini avatar on assistant messages */
+    .resolvly-msg-avatar {
+      width: 24px; height: 24px; border-radius: 8px; flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+      margin-bottom: 2px;
+    }
+    .resolvly-msg-avatar svg { width: 24px; height: 24px; }
+
+    /* Bubble + timestamp wrapper */
+    .resolvly-msg-bubble-wrap { max-width: 80%; display: flex; flex-direction: column; }
+    .resolvly-msg-row.user .resolvly-msg-bubble-wrap { align-items: flex-end; }
+
     .resolvly-msg {
-      max-width: 85%; padding: 10px 18px; border-radius: 12px; font-size: 14px; line-height: 1.5;
+      padding: 10px 14px; font-size: 14px; line-height: 1.55;
       word-wrap: break-word; white-space: pre-wrap;
     }
     .resolvly-msg.assistant {
-      background: #f3f4f6; color: #1f2937; align-self: flex-start; border-bottom-left-radius: 4px;
+      background: #ffffff; color: #1f2937;
+      border-radius: 16px 16px 16px 4px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.06);
     }
     .resolvly-msg.user {
-      background: ${CONFIG.primaryColor}; color: white; align-self: flex-end; border-bottom-right-radius: 4px;
+      background: ${CONFIG.primaryColor}; color: white;
+      border-radius: 16px 16px 4px 16px;
     }
     .resolvly-msg.system {
-      background: #fef3c7; color: #92400e; align-self: center; font-size: 12px;
-      border-radius: 8px; text-align: center;
+      background: #fef3c7; color: #92400e;
+      align-self: center; font-size: 12px;
+      border-radius: 10px; text-align: center;
+      padding: 8px 14px; max-width: 90%;
+      animation: resolvly-msg-in 0.25s ease-out;
     }
-    .resolvly-typing { display: flex; gap: 4px; padding: 12px 14px; align-self: flex-start; }
+
+    /* Timestamp */
+    .resolvly-msg-time {
+      font-size: 10px; color: #a1a1aa; margin-top: 3px; padding: 0 4px;
+    }
+    .resolvly-msg-row.user .resolvly-msg-time { text-align: right; }
+
+    /* ── Typing indicator ── */
+    .resolvly-typing-row {
+      display: flex; gap: 8px; align-items: flex-end;
+      animation: resolvly-msg-in 0.25s ease-out;
+    }
+    .resolvly-typing {
+      display: flex; gap: 5px; padding: 12px 16px;
+      background: #ffffff; border-radius: 16px 16px 16px 4px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+    }
     .resolvly-typing span {
-      width: 8px; height: 8px; border-radius: 50%; background: #d1d5db;
+      width: 7px; height: 7px; border-radius: 50%; background: #c4c4c4;
       animation: resolvly-bounce 1.4s ease-in-out infinite;
     }
-    .resolvly-typing span:nth-child(2) { animation-delay: 0.2s; }
-    .resolvly-typing span:nth-child(3) { animation-delay: 0.4s; }
-    @keyframes resolvly-bounce { 0%, 80%, 100% { transform: scale(0); } 40% { transform: scale(1); } }
+    .resolvly-typing span:nth-child(2) { animation-delay: 0.16s; }
+    .resolvly-typing span:nth-child(3) { animation-delay: 0.32s; }
+    @keyframes resolvly-bounce { 0%, 80%, 100% { transform: scale(0.4); opacity: 0.4; } 40% { transform: scale(1); opacity: 1; } }
+
+    /* ── Quick-ask starter questions ── */
+    .resolvly-starters {
+      display: flex; flex-direction: column; gap: 0; padding: 0 16px 8px 16px;
+      animation: resolvly-msg-in 0.3s ease-out;
+    }
+    .resolvly-starter {
+      background: none; border: none; border-bottom: 1px solid #f0f0f0;
+      color: #374151; padding: 11px 4px; font-size: 13.5px; cursor: pointer;
+      text-align: left; line-height: 1.4; transition: color 0.15s, background 0.15s;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      display: flex; align-items: center; justify-content: space-between; gap: 8px;
+    }
+    .resolvly-starter:last-child { border-bottom: none; }
+    .resolvly-starter:hover { color: ${CONFIG.primaryColor}; background: ${primaryLight}; border-radius: 8px; }
+    .resolvly-starter-arrow {
+      flex-shrink: 0; width: 16px; height: 16px; opacity: 0.3; transition: opacity 0.15s, transform 0.15s;
+    }
+    .resolvly-starter:hover .resolvly-starter-arrow { opacity: 0.7; transform: translateX(2px); }
+
+    /* ── Suggestion chips ── */
+    .resolvly-suggestions {
+      display: flex; flex-wrap: wrap; gap: 6px; padding-left: 32px;
+      animation: resolvly-msg-in 0.2s ease-out;
+    }
+    .resolvly-chip {
+      background: white; color: ${CONFIG.primaryColor};
+      border: 1px solid ${primaryMedium};
+      border-radius: 20px; padding: 6px 14px; font-size: 12px; cursor: pointer;
+      transition: all 0.15s; line-height: 1.3;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+    }
+    .resolvly-chip:hover {
+      background: ${primaryLight}; border-color: ${CONFIG.primaryColor};
+      transform: translateY(-1px); box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+    }
+
+    /* ── Input area ── */
     #resolvly-input-area {
-      padding: 12px 16px; border-top: 1px solid #e5e7eb; display: flex; gap: 8px; align-items: center;
+      padding: 12px 16px; border-top: 1px solid #f0f0f0;
+      display: flex; gap: 8px; align-items: center;
+      background: #ffffff;
+      flex-shrink: 0;
     }
     #resolvly-input {
-      flex: 1; border: 1px solid #d1d5db; border-radius: 20px; padding: 8px 16px;
-      font-size: 14px; outline: none; transition: border-color 0.2s;
+      flex: 1; border: 1px solid #e5e5e5; border-radius: 22px; padding: 9px 16px;
+      font-size: 14px; outline: none; transition: border-color 0.2s, box-shadow 0.2s;
+      background: #fafafa;
     }
-    #resolvly-input:focus { border-color: ${CONFIG.primaryColor}; }
+    #resolvly-input:focus {
+      border-color: ${CONFIG.primaryColor};
+      box-shadow: 0 0 0 3px ${primaryLight};
+      background: #ffffff;
+    }
     #resolvly-send {
       width: 36px; height: 36px; border-radius: 50%; border: none;
       background: ${CONFIG.primaryColor}; color: white; cursor: pointer;
       display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+      transition: transform 0.15s, opacity 0.15s;
     }
-    #resolvly-send:disabled { opacity: 0.5; cursor: not-allowed; }
+    #resolvly-send:hover { transform: scale(1.06); }
+    #resolvly-send:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+
+    /* ── Powered by ── */
     #resolvly-powered {
-      text-align: center; padding: 6px; font-size: 11px; color: #9ca3af;
+      text-align: center; padding: 8px; font-size: 11px; color: #b4b4b4;
+      background: #ffffff; letter-spacing: 0.01em;
+      flex-shrink: 0;
     }
-    #resolvly-powered a { color: #6b7280; text-decoration: none; }
-    .resolvly-suggestions {
-      display: flex; flex-wrap: wrap; gap: 6px; align-self: flex-start; max-width: 90%;
-      animation: resolvly-slide-up 0.2s ease-out;
-    }
-    .resolvly-chip {
-      background: white; color: ${CONFIG.primaryColor}; border: 1px solid ${CONFIG.primaryColor};
-      border-radius: 16px; padding: 6px 14px; font-size: 12px; cursor: pointer;
-      transition: background 0.15s, color 0.15s; line-height: 1.3;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-    }
-    .resolvly-chip:hover {
-      background: ${CONFIG.primaryColor}; color: white;
-    }
+    #resolvly-powered a { color: #8a8a8a; text-decoration: none; font-weight: 500; }
+    #resolvly-powered a:hover { color: ${CONFIG.primaryColor}; }
+
+    /* ── Markdown in messages ── */
     .resolvly-msg strong { font-weight: 600; }
     .resolvly-msg em { font-style: italic; }
     .resolvly-msg p { margin: 0 0 8px 0; }
     .resolvly-msg p:last-child { margin-bottom: 0; }
     .resolvly-msg ol, .resolvly-msg ul { margin: 4px 0 8px 0; padding-left: 20px; }
     .resolvly-msg li { margin-bottom: 4px; }
+
+    /* ── Mobile responsive ── */
+    @media (max-width: 420px) {
+      #resolvly-window {
+        width: calc(100vw - 16px); ${posLeft ? "left: 8px" : "right: 8px"}; bottom: 80px;
+        max-height: calc(100vh - 100px); border-radius: 16px;
+      }
+    }
   `;
 
   // ── Inject Styles ────────────────────────────────────────────────
@@ -135,38 +322,82 @@
   document.head.appendChild(style);
 
   // ── Build DOM ────────────────────────────────────────────────────
+  var arrowSvg = '<svg class="resolvly-starter-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>';
+
   var container = document.createElement("div");
   container.id = "resolvly-widget";
   container.innerHTML = `
     <button id="resolvly-bubble" aria-label="Open chat">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
-      </svg>
+      <span id="resolvly-bubble-icon">${chatIconSvg}</span>
+      <span id="resolvly-bubble-dot"></span>
     </button>
     <div id="resolvly-window">
       <div id="resolvly-header">
-        <h3>${CONFIG.headerTitle}</h3>
-        <button id="resolvly-close" aria-label="Close chat">&times;</button>
+        <div id="resolvly-header-avatar">
+          ${avatarSvg}
+          <span id="resolvly-header-status"></span>
+        </div>
+        <div id="resolvly-header-info">
+          <h3>${CONFIG.headerTitle}</h3>
+          <p>${CONFIG.agentName} · Online</p>
+        </div>
       </div>
       <div id="resolvly-messages"></div>
+      <div id="resolvly-starters" class="resolvly-starters" style="display:none"></div>
       <div id="resolvly-input-area">
         <input id="resolvly-input" type="text" placeholder="${CONFIG.placeholder}" autocomplete="off" />
         <button id="resolvly-send" aria-label="Send message">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M2 21l21-9L2 3v7l15 2-15 2z"/></svg>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>
+          </svg>
         </button>
       </div>
-      <div id="resolvly-powered">Powered by <a href="#">${CONFIG.poweredBy}</a></div>
+      <div id="resolvly-powered">Powered by <a href="https://www.resolvly.ai" target="_blank" rel="noopener">${CONFIG.poweredBy}</a></div>
     </div>
   `;
   document.body.appendChild(container);
 
   // ── Elements ─────────────────────────────────────────────────────
   var bubble = document.getElementById("resolvly-bubble");
+  var bubbleIcon = document.getElementById("resolvly-bubble-icon");
   var win = document.getElementById("resolvly-window");
-  var closeBtn = document.getElementById("resolvly-close");
   var messagesEl = document.getElementById("resolvly-messages");
+  var startersEl = document.getElementById("resolvly-starters");
   var input = document.getElementById("resolvly-input");
   var sendBtn = document.getElementById("resolvly-send");
+
+  // ── Build starter questions ──────────────────────────────────────
+  function buildStarters() {
+    if (CONFIG.questions.length === 0 || hasInteracted) return;
+    startersEl.innerHTML = "";
+    CONFIG.questions.forEach(function (q) {
+      var btn = document.createElement("button");
+      btn.className = "resolvly-starter";
+      btn.innerHTML = '<span>' + q + '</span>' + arrowSvg;
+      btn.addEventListener("click", function () {
+        hideStarters();
+        input.value = q;
+        sendMessage();
+      });
+      startersEl.appendChild(btn);
+    });
+    startersEl.style.display = "flex";
+  }
+
+  function hideStarters() {
+    startersEl.style.display = "none";
+    hasInteracted = true;
+  }
+
+  // ── Time Formatter ────────────────────────────────────────────
+  function getTime() {
+    var d = new Date();
+    var h = d.getHours();
+    var m = d.getMinutes();
+    var ampm = h >= 12 ? "PM" : "AM";
+    h = h % 12 || 12;
+    return h + ":" + (m < 10 ? "0" : "") + m + " " + ampm;
+  }
 
   // ── Markdown Renderer ────────────────────────────────────────────
   function renderMarkdown(text) {
@@ -207,16 +438,42 @@
 
   // ── Helpers ──────────────────────────────────────────────────────
   function addMessage(role, content) {
-    var div = document.createElement("div");
-    div.className = "resolvly-msg " + role;
-    if (role === "assistant" && content) {
-      div.innerHTML = renderMarkdown(content);
-    } else {
-      div.textContent = content;
+    if (role === "system") {
+      var sysDiv = document.createElement("div");
+      sysDiv.className = "resolvly-msg system";
+      sysDiv.textContent = content;
+      messagesEl.appendChild(sysDiv);
+      messagesEl.scrollTop = messagesEl.scrollHeight;
+      return sysDiv;
     }
-    messagesEl.appendChild(div);
+
+    var row = document.createElement("div");
+    row.className = "resolvly-msg-row " + role;
+
+    var html = "";
+
+    // Avatar for assistant messages
+    if (role === "assistant") {
+      html += '<div class="resolvly-msg-avatar">' + avatarSvg + '</div>';
+    }
+
+    html += '<div class="resolvly-msg-bubble-wrap">';
+    html += '<div class="resolvly-msg ' + role + '"></div>';
+    html += '<span class="resolvly-msg-time">' + getTime() + '</span>';
+    html += '</div>';
+
+    row.innerHTML = html;
+
+    var msgEl = row.querySelector(".resolvly-msg");
+    if (role === "assistant" && content) {
+      msgEl.innerHTML = renderMarkdown(content);
+    } else {
+      msgEl.textContent = content;
+    }
+
+    messagesEl.appendChild(row);
     messagesEl.scrollTop = messagesEl.scrollHeight;
-    return div;
+    return msgEl;
   }
 
   function addSuggestions(suggestions) {
@@ -239,11 +496,12 @@
   }
 
   function showTyping() {
-    var div = document.createElement("div");
-    div.className = "resolvly-typing";
-    div.id = "resolvly-typing-indicator";
-    div.innerHTML = "<span></span><span></span><span></span>";
-    messagesEl.appendChild(div);
+    var row = document.createElement("div");
+    row.className = "resolvly-typing-row";
+    row.id = "resolvly-typing-indicator";
+    row.innerHTML = '<div class="resolvly-msg-avatar">' + avatarSvg + '</div>' +
+      '<div class="resolvly-typing"><span></span><span></span><span></span></div>';
+    messagesEl.appendChild(row);
     messagesEl.scrollTop = messagesEl.scrollHeight;
   }
 
@@ -266,19 +524,25 @@
     isOpen = !isOpen;
     if (isOpen) {
       win.classList.add("open");
-      bubble.style.display = "none";
+      // Switch bubble to X icon (Drift-style)
+      bubble.classList.add("resolvly-close-mode");
+      bubbleIcon.innerHTML = closeIconSvg;
+      bubble.setAttribute("aria-label", "Close chat");
       if (messagesEl.children.length === 0) {
         addMessage("assistant", CONFIG.greeting);
+        buildStarters();
       }
       input.focus();
     } else {
       win.classList.remove("open");
-      bubble.style.display = "flex";
+      // Switch bubble back to chat icon
+      bubble.classList.remove("resolvly-close-mode");
+      bubbleIcon.innerHTML = chatIconSvg;
+      bubble.setAttribute("aria-label", "Open chat");
     }
   }
 
   bubble.addEventListener("click", toggle);
-  closeBtn.addEventListener("click", toggle);
 
   // ── Send Message (Streaming) ────────────────────────────────────
   var sending = false;
@@ -286,6 +550,9 @@
   async function sendMessage() {
     var text = input.value.trim();
     if (!text || sending) return;
+
+    // Hide starter questions once user sends a message
+    if (!hasInteracted) hideStarters();
 
     sending = true;
     sendBtn.disabled = true;
@@ -296,8 +563,8 @@
     var existingChips = messagesEl.querySelectorAll(".resolvly-suggestions");
     existingChips.forEach(function (el) { el.remove(); });
 
-    // Create empty assistant bubble for streaming
-    var assistantDiv = addMessage("assistant", "");
+    // Create empty assistant message for streaming
+    var assistantEl = addMessage("assistant", "");
     var streamedText = "";
 
     try {
@@ -320,7 +587,7 @@
 
       // If streaming endpoint fails, fall back to legacy
       if (!res.ok || !res.body) {
-        assistantDiv.remove();
+        assistantEl.closest(".resolvly-msg-row").remove();
         await sendMessageLegacy(text);
         return;
       }
@@ -329,6 +596,17 @@
       var decoder = new TextDecoder();
       var buffer = "";
       var currentEvent = "";
+
+      // Strip metadata tokens from display text during streaming
+      function stripMetaTokens(text) {
+        return text
+          .replace(/\[CONFIDENCE:\s*[\d.]+\]/g, "")
+          .replace(/\[SUGGESTIONS:\s*[^\]]*\]/g, "")
+          .replace(/\[SENTIMENT:\s*\w+\]/g, "")
+          .replace(/\[LANGUAGE:\s*\w+\]/g, "")
+          .replace(/\n{2,}$/g, "\n")
+          .trim();
+      }
 
       function processSSELines(lines) {
         for (var i = 0; i < lines.length; i++) {
@@ -343,11 +621,15 @@
                 conversationId = data.conversationId;
               } else if (currentEvent === "delta" && data.text) {
                 streamedText += data.text;
-                assistantDiv.textContent = streamedText;
+                // Strip metadata tokens and render markdown progressively
+                var displayText = stripMetaTokens(streamedText);
+                if (displayText) {
+                  assistantEl.innerHTML = renderMarkdown(displayText);
+                }
                 messagesEl.scrollTop = messagesEl.scrollHeight;
               } else if (currentEvent === "done") {
-                // Replace with rendered markdown (strips metadata tokens)
-                assistantDiv.innerHTML = renderMarkdown(data.content || streamedText);
+                // Final render with clean content from server
+                assistantEl.innerHTML = renderMarkdown(data.content || stripMetaTokens(streamedText));
                 if (data.suggestions) {
                   addSuggestions(data.suggestions);
                 }
@@ -358,9 +640,9 @@
                   );
                 }
               } else if (currentEvent === "error") {
-                assistantDiv.textContent =
+                assistantEl.textContent =
                   "Something went wrong. Please try again.";
-                assistantDiv.className = "resolvly-msg system";
+                assistantEl.className = "resolvly-msg system";
               }
             } catch (e) {
               // Ignore JSON parse errors for partial data
@@ -384,15 +666,10 @@
       if (buffer.trim()) {
         processSSELines(buffer.split("\n"));
       }
-
-      // If done event never rendered markdown, do it now
-      if (streamedText && !assistantDiv.querySelector("p, ol, strong")) {
-        assistantDiv.innerHTML = renderMarkdown(streamedText);
-      }
     } catch (err) {
       // Streaming failed — try legacy endpoint
-      if (!assistantDiv.textContent) {
-        assistantDiv.remove();
+      if (!assistantEl.textContent) {
+        assistantEl.closest(".resolvly-msg-row").remove();
         await sendMessageLegacy(text);
         return;
       }

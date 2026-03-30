@@ -79,6 +79,16 @@ export async function POST(req: NextRequest) {
   }
 
   try {
+    // Verify existing customer still works (may be from test mode)
+    if (customerId) {
+      try {
+        await stripe.customers.retrieve(customerId);
+      } catch {
+        // Customer doesn't exist in current mode — create a new one
+        customerId = null;
+      }
+    }
+
     if (!customerId) {
       const customer = await stripe.customers.create({
         email: userEmail,
@@ -115,6 +125,7 @@ export async function POST(req: NextRequest) {
       customer: customerId,
       line_items: [{ price: stripePriceId, quantity: 1 }],
       mode: "subscription",
+      allow_promotion_codes: true,
       success_url: successUrl,
       cancel_url: cancelUrl,
       metadata: { orgId, plan },
